@@ -1,97 +1,61 @@
+from Constant import *
+from Control import Control
+from Page_YN import Page_YN
+from Achieve import Achieve
+from Log import Log
+import ToolFunc as tool
 import functools
 
-from Constant import *
-from Control import Control, Key
-from Page_Y_or_N import Page_Y_or_N
-
-screen = PG.display.set_mode((SCR_W, SCR_H))
-clock = PG.time.Clock()
+screen = pg.display.set_mode((SCR_W, SCR_H))
+clock = pg.time.Clock()
 ctrl = Control()
 frame_time = key_time = 0
 pages = []
+achieve = Achieve()
+log = Log()
 
-
-def swap(a, b):
-	return b, a
-
-
-def b_to_p_tl(r, c):
-	x = (c-1) * BLOCK_SZ
-	y = (r-1) * BLOCK_SZ
-	return x, y
-
-
-def p_to_b_tl(x, y):
-	r = y // BLOCK_SZ + 1
-	c = x // BLOCK_SZ + 1
-	return r, c
-
-
-def window_refresh_display():
-	PG.draw.rect(screen, (0, 0, 0), pages[-1].update_range)
+def refresh_display():
+	pg.draw.rect(screen, (0, 0, 0), pages[-1].update_range)
 	pages[-1].draw(screen)
-	PG.display.update(pages[-1].update_range)
+	pg.display.update(pages[-1].update_range)
 
 
-def get_Y_or_N():
+def get_YN():
 	global frame_time, key_time
-	pages.append(Page_Y_or_N())
-	window_refresh_display()
-	ret = False
+	pages.append(Page_YN())
+	refresh_display()
 	while True:
 		clock.tick(FPS)
 		frame_time += 1
 
-		for event in PG.event.get():
-			if event.type == PG.KEYDOWN:
+		for event in pg.event.get():
+			if event.type == pg.KEYDOWN:
 				key_time += 1
-				ctrl.add_key(Key(event.key, key_time))
-			elif event.type == PG.KEYUP:
-				key_time += 1
-				ctrl.del_key(Key(event.key, key_time))
+				ctrl.add_key(event.key, key_time)
+			elif event.type == pg.KEYUP:
+				ctrl.del_key(event.key)
 
 		status, data = pages[-1].refresh(ctrl)
 		if status == PAGE_NONE:
 			continue
 		if status == PAGE_EXIT:
-			ret = data
-			break
-	pages.pop()
-	return ret
+			pages.pop()
+			return data
 
 
-def get_speed_level(blk_tp, dr_tp, speedup):
-	blk_rgd = 0
-	if blk_tp in ORES_DATA:
-		blk_rgd = ORES_DATA[blk_tp]['rgd']
-	elif blk_tp == DIRT:
-		blk_rgd = 1
-	dr_rgd = DRILL_DATA[dr_tp]['rgd']
-	if dr_rgd < blk_rgd:
-		return SPEED_LEVEL[speedup][0]
+def soft_quit():
+	status = get_YN()
+	if status:
+		tool.force_quit()
 	else:
-		return SPEED_LEVEL[speedup][dr_rgd - blk_rgd + 1]
+		return
 
 
-@functools.lru_cache()
-def load_image(name: str):
-	return PG.image.load(f'{name}')
-
-
-@functools.lru_cache()
-def load_images(name: str):
-	images = []
-	i = 0
-	while True:
-		filename = name.format(i)
-		# logging.debug(f'load_filename: {filename}')
-		if os.path.exists(filename):
-			images.append(PG.image.load(filename))
-		else:
-			break
-		i += 1
-	# logging.debug(f'load_images: {len(images)}')
-	return images
-
-
+def refresh_page():
+	status = pages[-1].refresh(ctrl)
+	if status == PAGE_NONE:
+		return
+	if len(pages) == 1:
+		tool.force_quit()
+	pages.pop()
 

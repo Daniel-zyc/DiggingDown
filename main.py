@@ -1,29 +1,7 @@
-import logging
-
 from Constant import *
-from Control import Control, Key
 from Page_Menu import Page_Menu
+import ToolFunc as tool
 import Global as glb
-
-
-def window_quit():
-	status = glb.get_Y_or_N()
-	if status:
-		PG.quit()
-		sys.exit(0)
-	else:
-		return
-
-
-def refresh_page_all():
-	status = glb.pages[-1].refresh(glb.ctrl)
-	if status == PAGE_NONE:
-		return
-	if len(glb.pages) == 1:
-		window_quit()
-		return
-	glb.pages.pop()
-
 
 if __name__ == "__main__":
 	glb.pages.append(Page_Menu())
@@ -31,16 +9,16 @@ if __name__ == "__main__":
 		glb.clock.tick(FPS)
 		glb.frame_time += 1
 
-		for event in PG.event.get():
-			if event.type == PG.QUIT:
-				window_quit()
-			elif event.type == PG.KEYDOWN:
+		for event in pg.event.get():
+			if event.type == pg.QUIT and isinstance(glb.pages[-1], Page_Menu):
+				tool.force_quit()
+			elif event.type == pg.QUIT:
+				glb.soft_quit()
+			elif event.type == pg.KEYDOWN:
 				glb.key_time += 1
-				glb.ctrl.add_key(Key(event.key, glb.key_time))
-			elif event.type == PG.KEYUP:
-				glb.key_time += 1
-				glb.ctrl.del_key(Key(event.key, glb.key_time))
+				glb.ctrl.add_key(event.key, glb.key_time)
+			elif event.type == pg.KEYUP:
+				glb.ctrl.del_key(event.key)
 
-		refresh_page_all()
-		glb.window_refresh_display()
-
+		glb.refresh_page()
+		glb.refresh_display()

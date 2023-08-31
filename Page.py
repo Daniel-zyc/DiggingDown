@@ -1,12 +1,12 @@
 class Page:
 	def __init__(self):
-		self.spg_list = []
+		self.list = []
 		self.update_range = None
 
-	def draw(self, scr):
-		for spg in self.spg_list:
-			spg.draw(scr)
+	def draw(self, screen):
+		for obj in self.list:
+			obj.draw(screen)
 
 	def __del__(self):
-		for spg in self.spg_list:
-			spg.empty()
+		for obj in self.list:
+			obj.empty()

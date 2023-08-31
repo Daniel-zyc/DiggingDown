@@ -1,10 +1,10 @@
 from Constant import *
 
 
-class SpriteGroup(PG.sprite.Group):
+class SpriteGroup(pg.sprite.Group):
 	def __init__(self):
 		super().__init__()
 
 	def move(self, d, sp):
-		for sprite in self.sprites():
-			sprite.move(d, sp)
+		for sp in self.sprites():
+			sp.move(d, sp)

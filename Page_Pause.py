@@ -1,38 +1,28 @@
 from Constant import *
 from Control import Control
-from Page import Page
-from Sprite_Pause import Sprite_Pause
-from Page_Keys import Page_Keys
+from PageEasy import PageEasy
+from SpriteEasy import SpriteEasy
 from Page_Achieve import Page_Achieve
-from Page_Savelog import Page_Savelog
+from Page_Save import Page_Save
 import Global as glb
 
 
-class Page_Pause(Page):
+class Page_Pause(PageEasy):
 	def __init__(self):
-		super().__init__()
-		sp = Sprite_Pause()
-		self.update_range = PG.Rect(sp.rect.x, sp.rect.y, sp.rect.width, sp.rect.height)
-		spg = PG.sprite.Group()
-		spg.add(sp)
-		self.spg_list.append(spg)
+		super().__init__(SpriteEasy(PAGE_URL[P_PAUSE]))
 
 	def refresh(self, ctrl: Control):
-		key = ctrl.get_short_key(CTRL_ESC, CTRL_ENTER)
-		if key != CTRL_NONE:
+		if ctrl.get_key(CTRL_ESC) != CTRL_NONE:
 			return PAGE_EXIT
-		if ctrl.get_short_key(CTRL_OPT[1]):
-			glb.pages.append(Page_Savelog())
-			return PAGE_NONE
-		if ctrl.get_short_key(CTRL_OPT[2]):
+		if ctrl.get_key(CTRL_OPT[1]) != CTRL_NONE:
+			glb.pages.append(Page_Save())
+		elif ctrl.get_key(CTRL_OPT[2]) != CTRL_NONE:
+			glb.pages.append(PageEasy(SpriteEasy(PAGE_URL[P_KEYS])))
+		elif ctrl.get_key(CTRL_OPT[3]) != CTRL_NONE:
 			glb.pages.append(Page_Achieve())
-			return PAGE_NONE
-		if ctrl.get_short_key(CTRL_OPT[3]):
-			glb.pages.append(Page_Keys())
-			return PAGE_NONE
-		if ctrl.get_short_key(CTRL_OPT[4]):
+		elif ctrl.get_key(CTRL_OPT[4]) != CTRL_NONE:
+			glb.pages.append(PageEasy(SpriteEasy(PAGE_URL[P_INFO])))
+		elif ctrl.get_key(CTRL_OPT[5]) != CTRL_NONE:
 			glb.pages.pop(-2)
 			return PAGE_EXIT
-
 		return PAGE_NONE
-
