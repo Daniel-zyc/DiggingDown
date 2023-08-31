@@ -5,6 +5,8 @@ from Sprite_Menu import Sprite_Menu
 from Page_Keys import Page_Keys
 from Page_Info import Page_Info
 from Page_Game import Page_Game
+from Page_Achieve import Page_Achieve
+from Page_Readlog import Page_Readlog
 import Global as glb
 
 
@@ -22,6 +24,12 @@ class Page_Menu(Page):
 			return PAGE_EXIT
 		if ctrl.get_short_key(CTRL_OPT[1]):
 			glb.pages.append(Page_Game())
+			return PAGE_NONE
+		if ctrl.get_short_key(CTRL_OPT[2]):
+			glb.pages.append(Page_Readlog())
+			return PAGE_NONE
+		if ctrl.get_short_key(CTRL_OPT[3]):
+			glb.pages.append(Page_Achieve())
 			return PAGE_NONE
 		if ctrl.get_short_key(CTRL_OPT[4]):
 			glb.pages.append(Page_Keys())

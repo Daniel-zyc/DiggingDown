@@ -3,6 +3,8 @@ from Control import Control
 from Page import Page
 from Sprite_Pause import Sprite_Pause
 from Page_Keys import Page_Keys
+from Page_Achieve import Page_Achieve
+from Page_Savelog import Page_Savelog
 import Global as glb
 
 
@@ -19,6 +21,12 @@ class Page_Pause(Page):
 		key = ctrl.get_short_key(CTRL_ESC, CTRL_ENTER)
 		if key != CTRL_NONE:
 			return PAGE_EXIT
+		if ctrl.get_short_key(CTRL_OPT[1]):
+			glb.pages.append(Page_Savelog())
+			return PAGE_NONE
+		if ctrl.get_short_key(CTRL_OPT[2]):
+			glb.pages.append(Page_Achieve())
+			return PAGE_NONE
 		if ctrl.get_short_key(CTRL_OPT[3]):
 			glb.pages.append(Page_Keys())
 			return PAGE_NONE
