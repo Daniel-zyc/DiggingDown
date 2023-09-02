@@ -18,8 +18,8 @@ class Page_Read(PageEasy):
 			if not glb.log.logs[i]:
 				continue
 			if ctrl.get_key(CTRL_OPT[i]) != CTRL_NONE:
+				glb.pages.pop()
 				glb.pages.append(Page_Game(i))
-				tool.swap(glb.pages[-1], glb.pages[-2])
-				return PAGE_EXIT
+				return PAGE_NONE
 		return PAGE_NONE
 

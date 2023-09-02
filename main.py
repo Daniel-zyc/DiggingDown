@@ -5,6 +5,7 @@ import Global as glb
 
 if __name__ == "__main__":
 	glb.pages.append(Page_Menu())
+	have_focus = 1
 	while True:
 		glb.clock.tick(FPS)
 		glb.frame_time += 1
@@ -14,11 +15,16 @@ if __name__ == "__main__":
 				tool.force_quit()
 			elif event.type == pg.QUIT:
 				glb.soft_quit()
+			elif event.type == pg.WINDOWFOCUSLOST:
+				have_focus = 0
+			elif event.type == pg.WINDOWFOCUSGAINED:
+				have_focus = 1
 			elif event.type == pg.KEYDOWN:
 				glb.key_time += 1
 				glb.ctrl.add_key(event.key, glb.key_time)
 			elif event.type == pg.KEYUP:
 				glb.ctrl.del_key(event.key)
 
-		glb.refresh_page()
-		glb.refresh_display()
+		if have_focus:
+			glb.refresh_page()
+			glb.refresh_display()

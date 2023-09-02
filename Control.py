@@ -8,12 +8,14 @@ class Control:
 			self.ctrls[c] = 0
 
 	def add_key(self, k: int, t: int):
-		k = KEY_TO_CTRL[k]
-		self.ctrls[k] = t
+		if k in KEY_TO_CTRL:
+			k = KEY_TO_CTRL[k]
+			self.ctrls[k] = t
 
 	def del_key(self, k: int):
-		k = KEY_TO_CTRL[k]
-		self.ctrls[k] = 0
+		if k in KEY_TO_CTRL:
+			k = KEY_TO_CTRL[k]
+			self.ctrls[k] = 0
 
 	def get_key(self, *args: int):
 		c, t = CTRL_NONE, 0

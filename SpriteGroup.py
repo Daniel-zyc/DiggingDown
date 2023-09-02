@@ -6,5 +6,5 @@ class SpriteGroup(pg.sprite.Group):
 		super().__init__()
 
 	def move(self, d, sp):
-		for sp in self.sprites():
-			sp.move(d, sp)
+		for obj in self.sprites():
+			obj.move(d, sp)

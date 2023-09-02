@@ -8,14 +8,16 @@ import Global as glb
 
 
 class Page_Pause(PageEasy):
-	def __init__(self):
+	def __init__(self, mp, dr):
 		super().__init__(SpriteEasy(PAGE_URL[P_PAUSE]))
+		self.mp = mp
+		self.dr = dr
 
 	def refresh(self, ctrl: Control):
 		if ctrl.get_key(CTRL_ESC) != CTRL_NONE:
 			return PAGE_EXIT
 		if ctrl.get_key(CTRL_OPT[1]) != CTRL_NONE:
-			glb.pages.append(Page_Save())
+			glb.pages.append(Page_Save(self.mp, self.dr))
 		elif ctrl.get_key(CTRL_OPT[2]) != CTRL_NONE:
 			glb.pages.append(PageEasy(SpriteEasy(PAGE_URL[P_KEYS])))
 		elif ctrl.get_key(CTRL_OPT[3]) != CTRL_NONE:

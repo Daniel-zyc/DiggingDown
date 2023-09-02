@@ -1,3 +1,6 @@
+import logging
+
+
 class Page:
 	def __init__(self):
 		self.list = []

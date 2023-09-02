@@ -7,6 +7,8 @@ import os
 import pygame.display
 
 pg.init()
+FONT_SIZE = 20
+default_font = pg.font.SysFont('kaiti', 20)
 logging.basicConfig(format = "%(levelname)s: %(message)s", level = logging.DEBUG)
 
 
@@ -16,7 +18,7 @@ logging.basicConfig(format = "%(levelname)s: %(message)s", level = logging.DEBUG
 CTRL_NONE = 0
 # 退出、回车
 CTRL_ESC, CTRL_ENTER = 1000, -1000
-CTRL_SH = -20
+CTRL_SH, CTRL_TAB = -20, -10
 # 上、下、左、右、空格
 CTRL_U, CTRL_D, CTRL_L, CTRL_R, CTRL_SP = 1, 2, 3, 4, 5
 # 交互
@@ -28,7 +30,7 @@ CTRL_OPT = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 CTRL_LIST = [
 	CTRL_NONE,
 	CTRL_ESC, CTRL_ENTER,
-	CTRL_SH,
+	CTRL_SH, CTRL_TAB,
 	CTRL_U, CTRL_D, CTRL_L, CTRL_R, CTRL_SP,
 	CTRL_INTER
 ]
@@ -39,6 +41,7 @@ KEY_TO_CTRL = {
 	pg.K_ESCAPE: CTRL_ESC,
 	pg.K_RETURN: CTRL_ENTER,
 	pg.K_LSHIFT: CTRL_SH, pg.K_RSHIFT: CTRL_SH,
+	pg.K_TAB: CTRL_TAB,
 	pg.K_UP: CTRL_U, pg.K_w: CTRL_U,
 	pg.K_DOWN: CTRL_D, pg.K_s: CTRL_D,
 	pg.K_LEFT: CTRL_L, pg.K_a: CTRL_L,
@@ -84,7 +87,7 @@ if SCR_INFO.current_h < 1440 or SCR_INFO.current_w < 2560:
 if SCR_INFO.current_h < 1080 or SCR_INFO.current_w < 1920:
 	SCR_N, SCR_M = 29, 53
 if SCR_INFO.current_h < 900 or SCR_INFO.current_w < 1600:
-	SCR_N, SCR_M = 23, 41
+	SCR_N, SCR_M = 25, 41
 # 屏幕中心点的物块坐标
 SCR_CEN_R, SCR_CEN_C = SCR_N // 2 + 1, SCR_M // 2 + 1
 # 屏幕大小
@@ -120,8 +123,19 @@ BLK_DATA = {
 	EMERALD:   {'name': '翡翠',   'rgd': 7,  'sz': 8,  'num': 25, 'layer': 1, 'grow': 1, 'min_sz': 1},
 	SAPPHIRE:  {'name': '蓝宝石', 'rgd': 8,  'sz': 6,  'num': 20, 'layer': 1, 'grow': 1, 'min_sz': 1},
 	RUBY:      {'name': '红宝石', 'rgd': 9,  'sz': 4,  'num': 15, 'layer': 1, 'grow': 1, 'min_sz': 1},
-	DIAMOND:   {'name': '钻石',   'rgd': 10, 'sz': 3,  'num': 10, 'layer': 1, 'grow': 1, 'min_sz': 1},
-	ROAD:      {'name': '路面',   'rgd': 10000}
+	DIAMOND:   {'name': '钻石',   'rgd': 10, 'sz': 3,  'num': 10, 'layer': 1, 'grow': 1, 'min_sz': 1}
+}
+
+ORES_VALUE = {
+	COAL: 100,
+	COPPER: 200,
+	SILVER: 300,
+	GOLD: 400,
+	AMETHYST: 500,
+	EMERALD: 600,
+	SAPPHIRE: 700,
+	RUBY: 800,
+	DIAMOND: 1000
 }
 
 # 矿物默认参数
@@ -131,8 +145,16 @@ ORES_LAYER_K = [3, 3, 3, 3, 3, 3, 3, 3, 3]
 ORES_GROW_K = [3, 3, 3, 3, 3, 3, 3, 3, 3]
 ORES_MIN_SZ_K = [3, 3, 3, 3, 3, 3, 3, 3, 3]
 
+for i in range(0, ORES_TOT):
+	ore = ORES[i]
+	BLK_DATA[ore]['sz'] *= ORES_SIZE_K[i]
+	BLK_DATA[ore]['num'] *= ORES_NUM_K[i]
+	BLK_DATA[ore]['layer'] *= ORES_LAYER_K[i]
+	BLK_DATA[ore]['grow'] *= ORES_GROW_K[i]
+	BLK_DATA[ore]['min_sz'] *= ORES_MIN_SZ_K[i]
+
 # 地图默认行、列数，必须为奇数
-MAP_N, MAP_M = 101, 201
+MAP_N, MAP_M = 71, 141
 # 矿物生成缓冲区高度
 EMPTY_LAYER_H = 10
 
@@ -161,24 +183,47 @@ COVER = 100
 # 云层信息
 # 云层移动速度和方向
 CLOUD_SP = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-CLOUD_DIR = [D_L, D_R]
+CLOUD_DIR = [D_D, D_U]
 # 云层默认数量
+CLOUD_GEN_SPEED = 1
 CLOUD_NUM_MAX = 10
 CLOUD_DENSITY_SIZE = 2500
 
 # 树木信息
 TREE_NUM_MAX = 10
-TREE_DENSITY_SIZE = 300
+TREE_DENSITY_LEN = 300
+
+SHOP_N = {
+	PETROL_SHOP: 4,
+	GAS_SHOP: 4,
+	ORES_SHOP: 4,
+	DRILL_SHOP: 4,
+}
+SHOP_W = {
+	PETROL_SHOP: 4,
+	GAS_SHOP: 4,
+	ORES_SHOP: 4,
+	DRILL_SHOP: 4
+}
+SHOP_POS = {
+	PETROL_SHOP: -5,
+	GAS_SHOP: -10,
+	ORES_SHOP: 2,
+	DRILL_SHOP: 7,
+}
+
+PETROL_COST = 1
+GAS_COST = 1
 
 BG_IMG_URL = {
 	EMPTY_BG: './assets/img/bg/empty.png',
 	SKY: './assets/img/bg/sky.png',
-	CLOUD: './assets/img/bg/cloud_{0[0]}_{1}.png',
-	TREE: './assets/img/bg/tree_{0][0]}_{1}.png',
-	PETROL_SHOP: './assets/img/bg/petrol-station_{0}.png',
-	GAS_SHOP: './assets/img/bg/gas-shop_{0}.png',
-	ORES_SHOP: './assets/img/bg/ores-shop_{0}.png',
-	DRILL_SHOP: './assets/img/bg/drill-shop_{0}.png',
+	CLOUD: './assets/img/bg/cloud_{}_{}.png',
+	TREE: './assets/img/bg/tree_{}_{}.png',
+	PETROL_SHOP: './assets/img/bg/petrol-shop_{}.png',
+	GAS_SHOP: './assets/img/bg/gas-shop_{}.png',
+	ORES_SHOP: './assets/img/bg/ores-shop_{}.png',
+	DRILL_SHOP: './assets/img/bg/drill-shop_{}.png',
 	COVER: './assets/img/bg/cover.png',
 }
 
@@ -187,13 +232,21 @@ BG_IMG_URL = {
 BODY, HEAD = 10, 20
 SFLAME, LFLAME = 30, 40
 
-DRILL_LEVEL_TOT = 6
+DRILL_LEVEL_MAX = 5
 DRILL_DATA = {
-	'rgd':   [4, 6, 8, 10, 12, 14],
+	'rgd':   [2, 4, 6, 8, 9, 10],
 	'eng':   [0, 1, 2, 3, 4, 5],
-	'p_cap': [1000, 1100, 1200, 1300, 1400, 1500],
+	'p_cap': [10000, 15000, 20000, 30000, 50000, 100000],
 	'g_cap': [100, 110, 120, 130, 140, 150],
 	'o_cap': [40, 50, 60, 70, 80, 90]
+}
+
+DRILL_COST = {
+	'rgd':   [100, 200, 300, 400, 500],
+	'eng':   [100, 200, 300, 400, 500],
+	'p_cap': [100, 200, 300, 400, 500],
+	'g_cap': [100, 200, 300, 400, 500],
+	'o_cap': [100, 200, 300, 400, 500]
 }
 
 # 钻机参数常量
@@ -204,11 +257,12 @@ SPEED_LEVEL = [
 SPEED_LEVEL_TOT = len(SPEED_LEVEL[0])
 
 DR_IMG_URL = {
-	BODY:   './assets/img/drill/body_{0[0]}_{0[1]}_{1}.png',
-	HEAD:   './assets/img/drill/head_{0[0]}_{0[1]}_{1}.png',
-	SFLAME: './assets/img/drill/sflame_{0[0]}_{0[1]}_{1}.png',
-	LFLAME: './assets/img/drill/bflame_{0[0]}_{0[1]}_{1}.png',
+	BODY:   './assets/img/drill/body_{}_{}_{}.png',
+	HEAD:   './assets/img/drill/head_{}_{}_{}.png',
+	SFLAME: './assets/img/drill/sflame_{}_{}_{}.png',
+	LFLAME: './assets/img/drill/lflame_{}_{}_{}.png',
 }
+
 
 # 页面常量
 PAGE_NONE = 0
@@ -242,22 +296,21 @@ IMG_ROLL_SP = 48
 
 
 ACHIEVE_URL = './achieve'
-ACHIEVE_LIST = [
-	BLK_DATA[DIRT]['name'],
-	'总矿石数',
-	BLK_DATA[COAL]['name'],
-	BLK_DATA[COPPER]['name'],
-	BLK_DATA[SILVER]['name'],
-	BLK_DATA[GOLD]['name'],
-	BLK_DATA[AMETHYST]['name'],
-	BLK_DATA[EMERALD]['name'],
-	BLK_DATA[SAPPHIRE]['name'],
-	BLK_DATA[RUBY]['name'],
-	BLK_DATA[DIAMOND]['name'],
-	'金钱',
-	'移动距离'
-]
-ACHIEVE_TOT = len(ACHIEVE_LIST)
+ACHIEVE_DEFAULT = {
+	DIRT: 0,
+	COAL: 0,
+	COPPER: 0,
+	SILVER: 0,
+	GOLD: 0,
+	AMETHYST: 0,
+	EMERALD: 0,
+	SAPPHIRE: 0,
+	RUBY: 0,
+	DIAMOND: 0,
+	'tot_ore': 0,
+	'tot_move': 0,
+	'tot_money': 0
+}
 
 if not os.path.exists(ACHIEVE_URL):
 	open(ACHIEVE_URL, mode = 'w')

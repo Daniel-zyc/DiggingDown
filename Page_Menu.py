@@ -11,6 +11,7 @@ import Global as glb
 class Page_Menu(PageEasy):
 	def __init__(self):
 		super().__init__(SpriteEasy(PAGE_URL[P_MENU]))
+		self.update_range = pg.Rect(0, 0, SCR_W, SCR_H)
 
 	def refresh(self, ctrl: Control):
 		if ctrl.get_key(CTRL_ESC) != CTRL_NONE:
