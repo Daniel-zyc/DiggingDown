@@ -16,7 +16,6 @@ import ToolFunc as tool
 import Global as glb
 
 
-
 class Page_Game(Page):
 	def __init__(self, log_id = 0):
 		super().__init__()

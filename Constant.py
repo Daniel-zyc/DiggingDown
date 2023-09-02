@@ -57,7 +57,7 @@ KEY_TO_CTRL = {
 	pg.K_7: CTRL_OPT[7],  pg.K_KP7: CTRL_OPT[7],  pg.K_KP_7: CTRL_OPT[7],
 	pg.K_8: CTRL_OPT[8],  pg.K_KP8: CTRL_OPT[8],  pg.K_KP_8: CTRL_OPT[8],
 	pg.K_9: CTRL_OPT[9],  pg.K_KP9: CTRL_OPT[9],  pg.K_KP_9: CTRL_OPT[9],
-	pg.K_0: CTRL_OPT[10], pg.K_KP0: CTRL_OPT[10], pg.K_KP_0: CTRL_OPT[10],
+	pg.K_0: CTRL_OPT[10], pg.K_KP0: CTRL_OPT[10], pg.K_KP_0: CTRL_OPT[10]
 }
 
 
@@ -154,7 +154,7 @@ for i in range(0, ORES_TOT):
 	BLK_DATA[ore]['min_sz'] *= ORES_MIN_SZ_K[i]
 
 # 地图默认行、列数，必须为奇数
-MAP_N, MAP_M = 71, 141
+MAP_N, MAP_M = 201, 301
 # 矿物生成缓冲区高度
 EMPTY_LAYER_H = 10
 
@@ -235,7 +235,7 @@ SFLAME, LFLAME = 30, 40
 DRILL_LEVEL_MAX = 5
 DRILL_DATA = {
 	'rgd':   [2, 4, 6, 8, 9, 10],
-	'eng':   [0, 1, 2, 3, 4, 5],
+	'eng':   [10, 1, 2, 3, 4, 5],
 	'p_cap': [10000, 15000, 20000, 30000, 50000, 100000],
 	'g_cap': [100, 110, 120, 130, 140, 150],
 	'o_cap': [40, 50, 60, 70, 80, 90]
