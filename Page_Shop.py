@@ -37,3 +37,4 @@ class Page_Shop(PageEasy):
 				self.dr.o_cap_l += 1
 				self.dr.o_cap = DRILL_DATA['o_cap'][self.dr.o_cap_l]
 		return PAGE_NONE
+

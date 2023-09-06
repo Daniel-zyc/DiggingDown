@@ -1,6 +1,4 @@
 from Constant import *
-from Map import Map
-from Drill import Drill
 from datetime import datetime
 import shutil
 
@@ -13,7 +11,7 @@ class Log:
 			folder = LOG_ROOT_URL + f'/{i}'
 			if not os.path.exists(folder):
 				self.logs.append(False)
-				self.logs_info.append(LOG_EMPTY_INFO)
+				self.logs_info.append(LOG_INFO_EMPTY)
 				continue
 			self.logs.append(True)
 			with open(folder + '/info', mode = 'r', encoding = 'utf-8') as f:
@@ -26,7 +24,7 @@ class Log:
 		shutil.rmtree(folder)
 		self.logs[idx] = False
 
-	def log_read(self, idx: int, mp: Map, dr: Drill):
+	def log_read(self, idx: int, mp, dr):
 		folder = LOG_ROOT_URL + f'/{idx}'
 		with open(folder + '/map', mode = 'r') as f:
 			data = eval(f.readline())
@@ -37,7 +35,7 @@ class Log:
 			for k, v in data.items():
 				setattr(dr, k, v)
 
-	def log_save(self, idx: int, mp: Map, dr: Drill):
+	def log_save(self, idx: int, mp, dr):
 		folder = LOG_ROOT_URL + f'/{idx}'
 		if not os.path.exists(folder):
 			os.mkdir(folder)

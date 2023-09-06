@@ -1,19 +1,542 @@
 from Constant import *
-from Control import *
+from Control import Control
 from Page import Page
 from Map import Map
 from Drill import Drill
-from PageEasy import PageEasy
-from Page_Pause import Page_Pause
-from Page_Shop import Page_Shop
 from SpriteGroup import SpriteGroup
+from Sprite import Sprite
 from SpriteEasy import SpriteEasy
-from Sprite_Cloud import Sprite_Cloud
 from SpriteMulti import SpriteMulti
-from Text import Text
 from datetime import datetime
-import ToolFunc as tool
+from Page_Pause import Page_Pause
+from Page_DShop import Page_DShop
 import Global as glb
+import random
+import threading
+
+
+class Sprite_Cloud(SpriteEasy):
+	def __init__(self, idx, d, spd, x, y):
+		super().__init__(CLD_IMG_URL.format(idx), x, y, random.random() / 2 + 1)
+		if d == D_R:
+			self.rect.topright = (x, y)
+		self.mv_timer = SPEED_LEVEL[0][spd][1]
+		self.d, self.spd = BG_DIR_MP[d], spd
+
+	def update(self):
+		self.mv_timer -= 1
+		if self.mv_timer == 0:
+			self.move(self.d, SPEED_LEVEL[0][self.spd][0])
+			self.mv_timer = SPEED_LEVEL[0][self.spd][1]
+
+
+class Sprite_Bird(SpriteMulti):
+	def __init__(self, idx, d, spd, x, y):
+		super().__init__(BIRD_IMG_URL.format(idx), x, y)
+		if d == D_R:
+			self.rect.topright = (x, y)
+		else:
+			for i in range(0, len(self.images)):
+				self.images[i] = pg.transform.flip(self.images[i], True, False)
+		for img in self.images:
+			img.set_colorkey((0, 0, 0))
+		self.mv_timer = SPEED_LEVEL[0][spd][1]
+		self.d, self.spd = BG_DIR_MP[d], spd
+
+	def update(self):
+		self.mv_timer -= 1
+		if self.mv_timer == 0:
+			self.move(self.d, SPEED_LEVEL[0][self.spd][0])
+			self.mv_timer = SPEED_LEVEL[0][self.spd][1]
+		self.roll_image()
+
+
+class Sprite_Tree(SpriteEasy):
+	def __init__(self, idx, x, y):
+		super().__init__(TREE_IMG_URL.format(idx), x, y, 1.5)
+		self.rect.bottomleft = (x, y)
+		self.rect.y += 10
+
+
+class Sprite_Shop(SpriteMulti):
+	def __init__(self, idx, x, y):
+		super().__init__(SHOP_IMG_URL[idx], x, y)
+		for i in range(0, len(self.images)):
+			if idx == O_SHOP:
+				self.images[i] = pg.transform.scale_by(self.images[i], 2.5)
+			else:
+				self.images[i] = pg.transform.scale2x(self.images[i])
+			self.images[i].set_colorkey(SHOP_COLORKEY[idx])
+		self.image = self.images[self.image_idx]
+		self.rect = self.image.get_rect()
+		self.rect.bottomleft = (x, y)
+
+
+class Background_Sp:
+	def __init__(self, mp: Map, dr: Drill):
+		self.mp, self.dr = mp, dr
+		self.w = self.mp.m * BLOCK_SZ
+		self.cloud_num = self.cloud_num_max = CLD_NUM_MAX * self.mp.m // BG_DENS_LEN
+		self.tree_num = self.tree_num_max = TREE_NUM_MAX * self.mp.m // BG_DENS_LEN
+		self.bird_num = self.bird_num_max = BIRD_NUM_MAX * self.mp.m // BG_DENS_LEN
+		self.sky, self.cld, self.tree, self.bird, self.shop = SpriteGroup(), SpriteGroup(), SpriteGroup(), SpriteGroup(), SpriteGroup()
+		self.wind_dir = BG_DIR[random.randint(0, 1)]
+		self.mv_pixel = self.mv_unit = 0
+		self.__init_sky()
+		self.__init_cld()
+		self.__init_bird()
+		self.__init_tree()
+		self.__init_shop()
+
+	def __init_sky(self):
+		idx = random.randint(0, SKY_LEN - 1)
+		x, y = scr_b_to_p(1, self.mp.m // 3 - 1, self.mp.r, self.mp.c)
+		x -= SCR_W
+		endx, endy = scr_b_to_p(1, self.mp.m * 2 // 3 + 1, self.mp.r, self.mp.c)
+		endx += SCR_W
+		sp = SpriteEasy(SKY_IMG_URL.format(idx), x, y)
+		self.sky.add(sp)
+		x += sp.rect.w
+		while x < endx:
+			sp = SpriteEasy(SKY_IMG_URL.format(idx), x, y)
+			self.sky.add(sp)
+			x += sp.rect.w
+
+	def __init_cld(self):
+		self.cloud_num = 0
+
+	def __generate_cld(self):
+		spd = random.randint(CLD_SPD[0], CLD_SPD[1])
+		idx = random.randint(0, CLD_LEN - 1)
+		x, y = -random.randint(1, SCR_W), random.randint(0, SCR_H // 5)
+		if self.wind_dir == D_L:
+			x = SCR_W + random.randint(1, SCR_W)
+		y -= self.mp.r * BLOCK_SZ
+		return Sprite_Cloud(idx, self.wind_dir, spd, x, y)
+
+	def __init_bird(self):
+		self.bird_num = 0
+
+	def __generate_bird(self):
+		spd = random.randint(BIRD_SPD[0], BIRD_SPD[1])
+		idx = random.randint(0, BIRD_LEN - 1)
+		x, y = -random.randint(1, SCR_W), random.randint(0, SCR_H // 5)
+		d = BG_DIR[random.randint(0, 1)]
+		if d == D_L:
+			x = SCR_W + random.randint(1, SCR_W)
+		y -= self.mp.r * BLOCK_SZ
+		return Sprite_Bird(idx, d, spd, x, y)
+
+	def __init_tree(self):
+		self.tree_num = random.randint(0, self.tree_num_max)
+		for i in range(0, self.tree_num):
+			self.tree.add(self.__generate_tree())
+
+	def __generate_tree(self):
+		idx = random.randint(0, TREE_LEN - 1)
+		c = random.randint(0, self.mp.m)
+		x, y = map_b_to_p(1, c, self.mp.r, self.mp.c)
+		return Sprite_Tree(idx, x, y)
+
+	def __init_shop(self):
+		for key, range in SHOP_R.items():
+			x, y = map_b_to_p(1, range[0] + self.mp.reborn_C, self.mp.r, self.mp.c)
+			self.shop.add(Sprite_Shop(key, x, y))
+
+	def update(self):
+		self.cld.update()
+		self.shop.update()
+		for sp in self.cld.sprites():
+			if not pg.sprite.spritecollide(sp, self.sky, False):
+				sp.kill()
+				self.cloud_num -= 1
+		self.bird.update()
+		for sp in self.bird.sprites():
+			if not pg.sprite.spritecollide(sp, self.sky, False):
+				sp.kill()
+				self.bird_num -= 1
+		if self.mp.r > SCR_CEN_R:
+			return
+		if self.cloud_num < self.cloud_num_max and random.randint(1, CLD_GEN_SPD[1]) <= CLD_GEN_SPD[0]:
+			self.cld.add(self.__generate_cld())
+			self.cloud_num += 1
+		if self.bird_num < self.cloud_num_max and random.randint(1, BIRD_GEN_SPD[1]) <= BIRD_GEN_SPD[0]:
+			self.bird.add(self.__generate_bird())
+			self.bird_num += 1
+
+	def move(self, d, spd):
+		if d == D_MP[D_U] or d == D_MP[D_D]:
+			self.tree.move(d, spd)
+			self.shop.move(d, spd)
+			self.cld.move(d, spd)
+			self.sky.move(d, spd)
+			self.bird.move(d, spd)
+			return
+		if d == D_MP[D_L]:
+			self.mv_pixel -= spd
+		else:
+			self.mv_pixel += spd
+		tmp = abs(self.mv_pixel // 3 - self.mv_unit)
+		self.mv_unit = self.mv_pixel // 3
+		self.tree.move(d, spd)
+		self.shop.move(d, spd)
+		self.cld.move(d, tmp)
+		self.sky.move(d, tmp)
+		self.bird.move(d, tmp)
+
+	def draw(self, scr):
+		if self.mp.r > SCR_CEN_R:
+			return
+		scr_rect = scr.get_rect()
+		for sp in self.sky.sprites():
+			if sp.rect.colliderect(scr_rect):
+				sp.draw(scr)
+		for sp in self.cld.sprites():
+			if sp.rect.colliderect(scr_rect):
+				sp.draw(scr)
+		for sp in self.tree.sprites():
+			if sp.rect.colliderect(scr_rect):
+				sp.draw(scr)
+		for sp in self.bird.sprites():
+			if sp.rect.colliderect(scr_rect):
+				sp.draw(scr)
+		for sp in self.shop.sprites():
+			if sp.rect.colliderect(scr_rect):
+				sp.draw(scr)
+
+	def empty(self):
+		self.sky.empty()
+		self.cld.empty()
+		self.tree.empty()
+		self.bird.empty()
+		self.shop.empty()
+
+
+class Sprite_Block(Sprite):
+	def __init__(self, tp, x, y):
+		super().__init__()
+		self.image = image_buf[tp]
+		if is_chest(tp):
+			self.image = pg.transform.scale(self.image, (26, 26))
+			x -= 1
+			y -= 1
+		self.rect = self.image.get_rect()
+		self.rect.x, self.rect.y = x, y
+
+
+class Sprite_NPC(Sprite):
+	def __init__(self, tp, x, y):
+		super().__init__()
+		self.image = image_buf[tp]
+		self.image.set_colorkey((0, 0, 0))
+		self.rect = self.image.get_rect()
+		self.rect.midbottom = (x + BLOCK_SZ // 2 - 1, y + BLOCK_SZ)
+		self.npc = tp
+
+	def update(self):
+		if random.randint(1, NPC_MOVE[1]) > random.randint(1, NPC_MOVE[0]):
+			return
+		self.image = pg.transform.flip(self.image, True, False)
+
+
+class Map_Sp:
+	def __init__(self, mp: Map, dr: Drill):
+		self.mp, self.dr = mp, dr
+		image_buf[UNDER] = pg.image.load(UNDER_IMG_URL.format(random.randint(0, UNDER_LEN - 1)))
+		image_buf[CAVE] = pg.image.load(CAVE_IMG_URL.format(random.randint(0, CAVE_LEN - 1)))
+		self.map = [[None] * (self.mp.m + 1) for i in range(0, self.mp.n + 1)]
+		self.fog = [[None] * (self.mp.m + 1) for i in range(0, self.mp.n + 1)]
+		self.npc = SpriteGroup()
+		self.old_r, self.old_c = self.mp.r, self.mp.c
+		self.create()
+		self.erase_fog(self.dr.r, self.dr.c)
+
+	def add_block(self, i, j):
+		if not self.mp.in_dirt(i, j):
+			return
+		x, y = map_b_to_p(i, j, self.mp.r, self.mp.c)
+		if self.mp.fog[i][j]:
+			self.fog[i][j] = Sprite_Block(FOG, x, y)
+		elif is_dirt(self.mp.mp[i][j]) or is_ore(self.mp.mp[i][j]) or is_chest(self.mp.mp[i][j]):
+			self.map[i][j] = Sprite_Block(self.mp.mp[i][j], x, y)
+		if is_NPC(self.mp.mp[i][j]):
+			self.npc.add(Sprite_NPC(self.mp.mp[i][j], x, y))
+		if self.mp.mp[i][j] != EMPTY and not is_NPC(self.mp.mp[i][j]):
+			return
+		if self.mp.in_under(i, j):
+			self.map[i][j] = Sprite_Block(UNDER, x, y)
+		else:
+			self.map[i][j] = Sprite_Block(CAVE, x, y)
+
+	def remove_npc(self, idx):
+		for sp in self.npc.sprites():
+			if sp.npc == idx:
+				self.npc.remove(sp)
+				break
+
+	def remove_block(self, i, j):
+		if not self.mp.in_dirt(i, j):
+			return
+		if self.map[i][j] is not None:
+			self.map[i][j].kill()
+		if self.fog[i][j] is not None:
+			self.fog[i][j].kill()
+		self.map[i][j] = self.fog[i][j] = None
+		if is_NPC(self.mp.mp[i][j]):
+			self.remove_npc(self.mp.mp[i][j])
+
+	def create(self):
+		self.old_r, self.old_c = self.mp.r, self.mp.c
+		for i in range(self.old_r - SCR_CEN_R - PRE_LOAD + 1, self.old_r + SCR_CEN_R + PRE_LOAD):
+			for j in range(self.old_c - SCR_CEN_C - PRE_LOAD + 1, self.old_c + SCR_CEN_C + PRE_LOAD):
+				self.add_block(i, j)
+
+	def in_preload_range(self, r, c, rr, cc):
+		return rr - SCR_CEN_R - PRE_LOAD < r < rr + SCR_CEN_R + PRE_LOAD and cc - SCR_CEN_C - PRE_LOAD < c < cc + SCR_CEN_C + PRE_LOAD
+
+	def recreate(self):
+		if self.mp.r != self.old_r:
+			r, nr = self.old_r - SCR_CEN_R - PRE_LOAD + 1, self.mp.r + SCR_CEN_R + PRE_LOAD - 1
+			if self.mp.r < self.old_r:
+				r, nr = self.old_r + SCR_CEN_R + PRE_LOAD - 1, self.mp.r - SCR_CEN_R - PRE_LOAD + 1
+			for j in range(self.mp.c - SCR_CEN_C - PRE_LOAD + 1, self.mp.c + SCR_CEN_C + PRE_LOAD):
+				self.add_block(nr, j)
+				self.remove_block(r, j)
+		else:
+			c, nc = self.old_c - SCR_CEN_C - PRE_LOAD + 1, self.mp.c + SCR_CEN_C + PRE_LOAD - 1
+			if self.mp.c < self.old_c:
+				c, nc = self.old_c + SCR_CEN_C + PRE_LOAD - 1, self.mp.c - SCR_CEN_C - PRE_LOAD + 1
+			for i in range(self.mp.r - SCR_CEN_R - PRE_LOAD + 1, self.mp.r + SCR_CEN_R + PRE_LOAD):
+				self.add_block(i, nc)
+				self.remove_block(i, c)
+		self.old_r, self.old_c = self.mp.r, self.mp.c
+
+	def erase_fog(self, r, c):
+		for i in range(r - FOG_RAD, r + FOG_RAD + 1):
+			for j in range(c - FOG_RAD, c + FOG_RAD + 1):
+				if not self.mp.in_dirt(i, j) or fog_dist(i, j, r, c) > FOG_RAD or not self.mp.fog[i][j]:
+					continue
+				self.mp.fog[i][j] = 0
+				self.fog[i][j] = None
+				x, y = map_b_to_p(i, j, self.mp.r, self.mp.c)
+				if is_dirt(self.mp.mp[i][j]) or is_ore(self.mp.mp[i][j]) or is_chest(self.mp.mp[i][j]):
+					self.map[i][j] = Sprite_Block(self.mp.mp[i][j], x, y)
+				elif self.mp.in_under(i, j):
+					self.map[i][j] = Sprite_Block(UNDER, x, y)
+				else:
+					self.map[i][j] = Sprite_Block(CAVE, x, y)
+
+	def to_empty(self, r, c):
+		if self.mp.mp[r][c] == EMPTY or r == 0:
+			return
+		x, y = map_b_to_p(r, c, self.mp.r, self.mp.c)
+		if self.mp.in_under(r, c):
+			self.map[r][c] = Sprite_Block(UNDER, x, y)
+		else:
+			self.map[r][c] = Sprite_Block(CAVE, x, y)
+		if is_NPC(self.mp.mp[r][c]):
+			self.remove_npc(self.mp.mp[r][c])
+		self.mp.mp[r][c] = EMPTY
+
+	def update_map(self, r, c):
+		self.erase_fog(r, c)
+		self.to_empty(r, c)
+		if self.mp.r != self.old_r or self.mp.c != self.old_c:
+			self.recreate()
+
+	def move(self, d, sp):
+		self.npc.move(d, sp)
+		for i in range(self.old_r - SCR_CEN_R - PRE_LOAD + 1, self.old_r + SCR_CEN_R + PRE_LOAD):
+			for j in range(self.old_c - SCR_CEN_C - PRE_LOAD + 1, self.old_c + SCR_CEN_C + PRE_LOAD):
+				if not self.mp.in_dirt(i, j):
+					continue
+				if self.map[i][j] is not None:
+					self.map[i][j].move(d, sp)
+				if self.fog[i][j] is not None:
+					self.fog[i][j].move(d, sp)
+
+	def draw(self, scr):
+		self.npc.update()
+		for i in range(self.old_r - SCR_CEN_R - PRE_LOAD + 1, self.old_r + SCR_CEN_R + PRE_LOAD):
+			for j in range(self.old_c - SCR_CEN_C - PRE_LOAD + 1, self.old_c + SCR_CEN_C + PRE_LOAD):
+				if not self.mp.in_dirt(i, j) or self.map[i][j] is None:
+					continue
+				self.map[i][j].draw(scr)
+		self.npc.draw(scr)
+		for i in range(self.old_r - SCR_CEN_R - PRE_LOAD + 1, self.old_r + SCR_CEN_R + PRE_LOAD):
+			for j in range(self.old_c - SCR_CEN_C - PRE_LOAD + 1, self.old_c + SCR_CEN_C + PRE_LOAD):
+				if not self.mp.in_dirt(i, j) or self.fog[i][j] is None:
+					continue
+				self.fog[i][j].draw(scr)
+
+	def empty(self):
+		self.fog.clear()
+		self.npc.empty()
+		self.map.clear()
+
+
+class Sprite_Head(Sprite):
+	def __init__(self, x, y, d, l):
+		super().__init__()
+		if d <= 2:
+			self.image = pg.image.load(DR_IMG_URL[HEAD].format(d, l))
+		else:
+			self.image = pg.image.load(DR_IMG_URL[HEAD].format(d - 2, l))
+			if d == D_L:
+				self.image = pg.transform.flip(self.image, True, False)
+			else:
+				self.image = pg.transform.flip(self.image, False, True)
+		self.image.set_colorkey((255, 255, 255))
+		self.rect = self.image.get_rect()
+		self.rect.x, self.rect.y = x, y
+		self.dir = BG_DIR_MP[d]
+		self.shake_idx = 0
+
+	def update(self):
+		self.rect.x += D_XY[self.dir][0] * HEAD_SHAKE[self.shake_idx]
+		self.rect.y += D_XY[self.dir][1] * HEAD_SHAKE[self.shake_idx]
+		self.shake_idx += 1
+		self.shake_idx %= len(HEAD_SHAKE)
+
+
+class Sprite_Body(Sprite):
+	def __init__(self, x, y, d, l):
+		super().__init__()
+		if d <= 2:
+			self.image = pg.image.load(DR_IMG_URL[BODY].format(d, l))
+		else:
+			self.image = pg.image.load(DR_IMG_URL[BODY].format(d - 2, l))
+			if d == D_L:
+				self.image = pg.transform.flip(self.image, True, False)
+			else:
+				self.image = pg.transform.flip(self.image, False, True)
+		self.image.set_colorkey((255, 255, 255))
+		self.rect = self.image.get_rect()
+		self.rect.x, self.rect.y = x, y
+
+
+class Sprite_Flame(Sprite):
+	def __init__(self, tp, x, y, d, l):
+		super().__init__()
+		if d <= 2:
+			self.image = pg.image.load(DR_IMG_URL[tp].format(d, l))
+		else:
+			self.image = pg.image.load(DR_IMG_URL[tp].format(d - 2, l))
+			if d == D_L:
+				self.image = pg.transform.flip(self.image, True, False)
+			else:
+				self.image = pg.transform.flip(self.image, False, True)
+		self.image.set_colorkey((255, 255, 255))
+		self.rect = self.image.get_rect()
+		self.rect.x, self.rect.y = x, y
+		self.dir = d
+		self.shake_idx = 0
+
+	def update(self):
+		print(self.dir)
+		self.rect.x += D_XY[self.dir][0] * FLAME_SHAKE[self.shake_idx]
+		self.rect.y += D_XY[self.dir][1] * FLAME_SHAKE[self.shake_idx]
+		self.shake_idx += 1
+		self.shake_idx %= len(FLAME_SHAKE)
+		self.dir += 1
+		if self.dir > 4:
+			self.dir = 1
+
+
+class Drill_Sp:
+	def __init__(self, mp: Map, dr: Drill):
+		self.mp, self.dr = mp, dr
+		self.heads = self.get_drill_sp(HEAD)
+		self.bodys = self.get_drill_sp(BODY)
+		self.sflames = self.get_drill_sp(SFLAME)
+		self.lflames = self.get_drill_sp(LFLAME)
+		self.head, self.body, self.flame = SpriteGroup(), SpriteGroup(), SpriteGroup()
+		self.dir, self.is_moving, self.speedup, self.is_drilling = D_R, 0, 0, 0
+		self.update()
+
+	def update(self):
+		self.head.empty()
+		self.body.empty()
+		self.flame.empty()
+		self.head.add(self.heads[self.dir])
+		self.body.add(self.bodys[self.dir])
+		if self.is_moving:
+			if self.speedup:
+				self.flame.add(self.lflames[self.dir])
+			else:
+				self.flame.add(self.sflames[self.dir])
+		if self.is_drilling:
+			self.head.update()
+		if self.is_moving:
+			self.flame.update()
+
+	def get_drill_sp(self, part):
+		ret = [None]
+		xx, yy = [SCR_CEN_R] * 5, [SCR_CEN_C] * 5
+		if part == HEAD:
+			for d in range(1, 5):
+				xx[d], yy[d] = xx[d] + D_XY[d][0], yy[d] + D_XY[d][1]
+				xx[d], yy[d] = dr_b_to_p(xx[d], yy[d], self.dr.r, self.dr.c, self.mp.r, self.mp.c)
+				ret.append(Sprite_Head(xx[d], yy[d], d, self.dr.rgd_l))
+		elif part == SFLAME:
+			for d in range(1, 5):
+				xx[d], yy[d] = xx[d] - D_XY[d][0], yy[d] - D_XY[d][1]
+				xx[d], yy[d] = dr_b_to_p(xx[d], yy[d], self.dr.r, self.dr.c, self.mp.r, self.mp.c)
+				ret.append(Sprite_Flame(SFLAME, xx[d], yy[d], d, self.dr.g_l))
+		elif part == LFLAME:
+			for d in range(1, 5):
+				xx[d], yy[d] = xx[d] - D_XY[d][0], yy[d] - D_XY[d][1]
+				xx[d], yy[d] = dr_b_to_p(xx[d], yy[d], self.dr.r, self.dr.c, self.mp.r, self.mp.c)
+				ret.append(Sprite_Flame(LFLAME, xx[d], yy[d], d, self.dr.g_l))
+		else:
+			for d in range(1, 5):
+				xx[d], yy[d] = dr_b_to_p(xx[d], yy[d], self.dr.r, self.dr.c, self.mp.r, self.mp.c)
+				ret.append(Sprite_Body(xx[d], yy[d], d, self.dr.h_l))
+		return ret
+
+	def move(self, d, sp):
+		for i in range(1, 5):
+			self.heads[i].move(d, sp)
+			self.bodys[i].move(d, sp)
+			self.sflames[i].move(d, sp)
+			self.lflames[i].move(d, sp)
+
+	def draw(self, scr):
+		self.head.draw(scr)
+		self.flame.draw(scr)
+		self.body.draw(scr)
+
+	def empty(self):
+		self.head.empty()
+		self.body.empty()
+		self.flame.empty()
+
+
+class Game_Info:
+	pass
+
+
+class NPC_Sp:
+	def __init__(self, mp: Map):
+		self.mp = mp
+		self.npcs = [[], []]
+		r, c = SCR_N - 1, SCR_CEN_C - NPC_TOT // 2 * 2
+		for npc in NPCS:
+			x, y = b_to_p(r, c)
+			self.npcs[0].append(Sprite_NPC(npc, x, y))
+			self.npcs[0][-1].image = load_img(NPC_IMG_URL.format(npc - NPCS[0]))
+			self.npcs[0][-1].image.set_colorkey((0, 0, 0))
+			self.npcs[0][-1].image.set_alpha(96)
+			self.npcs[1].append(Sprite_NPC(npc, x, y))
+			c += 2
+
+	def draw(self, scr):
+		for npc in NPCS:
+			idx = npc - NPCS[0]
+			self.npcs[self.mp.npc[npc]][idx].draw(scr)
+
+	def empty(self):
+		self.npcs = None
 
 
 class Page_Game(Page):
@@ -24,342 +547,381 @@ class Page_Game(Page):
 		self.dr = Drill()
 		if log_id != 0:
 			glb.log.log_read(log_id, self.mp, self.dr)
-			self.r, self.c = self.dr.r, self.dr.c
 		else:
 			self.mp.init_new()
-			self.r, self.c = self.mp.reborn_R, self.mp.reborn_C
-			self.dr.init_new(self.r, self.c)
-		self.rgd = self.dr.rgd_l
-		self.eng = self.dr.eng_l
-		self.g_cap = self.dr.g_cap_l
-		self.cloud_num = self.cloud_num_max = CLOUD_NUM_MAX * self.mp.m * self.mp.g_level // CLOUD_DENSITY_SIZE
-		self.tree_num = self.tree_num_max = TREE_NUM_MAX*self.mp.m // TREE_DENSITY_LEN
-		self.sky = None
-		self.sky_spg = SpriteGroup()
-		self.cld_spg = SpriteGroup()
-		self.bg_spg = SpriteGroup()
-		self.mp_sp = [[None] for i in range(0, self.mp.n + 1)]
-		self.mp_spg = SpriteGroup()
-		self.dr_h = self.dr_b = self.dr_f = None
-		self.dr_spg = SpriteGroup()
-		self.info = Text()
-		self.init_bg()
-		self.init_mp()
-		self.init_dr()
-		self.show_info = 0
-		self.list = [self.sky_spg, self.cld_spg, self.bg_spg, self.mp_spg, self.dr_spg]
-		self.is_moving = 0
-		self.dir = D_R
-		self.speed = SPEED_LEVEL[0][0]
-		self.speedup = 0
-		self.pixel = 0
-		self.nr, self.nc = 0, 0
-		self.mv_timer = self.speed[1]
-		self.upgrade = 0
+			self.dr.init_new(self.mp.reborn_R, self.mp.reborn_C)
+		self.old_rgd, self.old_eng, self.old_h = self.dr.rgd_l, self.dr.eng_l, self.dr.h_l
+		self.bg = Background_Sp(self.mp, self.dr)
+		self.map = Map_Sp(self.mp, self.dr)
+		self.drill = Drill_Sp(self.mp, self.dr)
+		self.show_npc = 1
+		self.npc = NPC_Sp(self.mp)
+		self.frame_cnt = self.show_info = self.pre_fps = 0
 		self.pre_time = datetime.now()
-		self.over = 0
-
-	def init_bg(self):
-		x, y = tool.loc_b_to_p(1, 1, self.r, self.c)
-		self.sky = SpriteEasy(BG_IMG_URL[SKY], x, y)
-		self.sky_spg.add(self.sky)
-
-		self.cloud_num = random.randint(1, self.cloud_num_max)
-		for i in range(0, self.cloud_num):
-			r = random.randint(1, self.mp.g_level//2)
-			c = random.randint(1, self.mp.m)
-			x, y = tool.loc_b_to_p(r, c, self.r, self.c)
-			self.cld_spg.add(self.generate_cloud(x, y))
-
-		self.tree_num = random.randint(1, self.tree_num_max)
-		for i in range(0, self.tree_num):
-			self.bg_spg.add(self.generate_tree())
-
-		x, y = tool.loc_b_to_p(self.mp.reborn_R - SHOP_N[PETROL_SHOP] + 1, self.mp.reborn_C + SHOP_POS[PETROL_SHOP], self.r, self.c)
-		self.bg_spg.add(SpriteMulti(BG_IMG_URL[PETROL_SHOP], x, y))
-
-		x, y = tool.loc_b_to_p(self.mp.reborn_R - SHOP_N[GAS_SHOP] + 1, self.mp.reborn_C + SHOP_POS[GAS_SHOP], self.r, self.c)
-		self.bg_spg.add(SpriteMulti(BG_IMG_URL[GAS_SHOP], x, y))
-
-		x, y = tool.loc_b_to_p(self.mp.reborn_R - SHOP_N[ORES_SHOP] + 1, self.mp.reborn_C + SHOP_POS[ORES_SHOP], self.r, self.c)
-		self.bg_spg.add(SpriteMulti(BG_IMG_URL[ORES_SHOP], x, y))
-
-		x, y = tool.loc_b_to_p(self.mp.reborn_R - SHOP_N[DRILL_SHOP] + 1, self.mp.reborn_C + SHOP_POS[DRILL_SHOP], self.r, self.c)
-		self.bg_spg.add(SpriteMulti(BG_IMG_URL[DRILL_SHOP], x, y))
-
-		x, y = tool.loc_b_to_p(self.mp.n, 1, self.r, self.c)
-		tmp = SpriteEasy(BG_IMG_URL[COVER], x, y)
-		tmp.rect.bottomright = (x, y)
-		self.bg_spg.add(tmp)
-
-		x, y = tool.loc_b_to_p(self.mp.r_level, 1, self.r, self.c)
-		self.bg_spg.add(SpriteEasy(BG_IMG_URL[EMPTY_BG], x, y))
-
-		x, y = tool.loc_b_to_p(1, self.mp.m + 1, self.r, self.c)
-		self.bg_spg.add(SpriteEasy(BG_IMG_URL[COVER], x, y))
-
-		x, y = tool.loc_b_to_p(self.mp.n + 1, 1, self.r, self.c)
-		self.bg_spg.add(SpriteEasy(BG_IMG_URL[COVER], x, y))
-
-	def generate_cloud(self, x = None, y = None):
-		d = random.randint(0, 1)
-		sp = random.randint(0, 9)
-		idx = random.randint(0, CLOUD_LEN - 1)
-		if y is None:
-			y = random.randint(self.sky.rect.y, self.sky.rect.y + self.mp.g_level*BLOCK_SZ//2)
-			if d == 0:
-				x = self.sky.rect.x
-			else:
-				x = self.sky.rect.x + self.mp.m * BLOCK_SZ
-		return Sprite_Cloud(idx, d, CLOUD_SP[sp], x, y)
-
-	def generate_tree(self):
-		r, c = self.mp.r_level, random.randint(1, self.mp.m)
-		x, y = tool.loc_b_to_p(r, c, self.r, self.c)
-		idx = random.randint(0, TREE_LEN-1)
-		tmp = SpriteMulti(BG_IMG_URL[TREE], x, y, idx)
-		tmp.rect.left = x
-		tmp.rect.bottom = y
-		return tmp
-
-	def init_mp(self):
-		for i in range(self.mp.r_level, self.mp.n + 1):
-			for j in range(1, self.mp.m + 1):
-				if self.mp.mp[i][j] == EMPTY:
-					self.mp_sp[i].append(None)
-					continue
-				x, y = tool.loc_b_to_p(i, j, self.r, self.c)
-				self.mp_sp[i].append(SpriteEasy(BLK_IMG_URL[self.mp.mp[i][j]], x, y))
-				self.mp_spg.add(self.mp_sp[i][-1])
-
-	def init_dr(self):
-		self.dr_h = self.get_drill_sp(HEAD, self.dr.rgd_l)
-		self.dr_b = self.get_drill_sp(BODY, self.dr.eng_l)
-		self.dr_f = [self.get_drill_sp(SFLAME, self.dr.g_cap_l), self.get_drill_sp(LFLAME, self.dr.g_cap_l)]
-		self.dr_spg.add(self.dr_h[D_R])
-		self.dr_spg.add(self.dr_b[D_R])
-		self.dr_spg.add(self.dr_f[0][D_R])
-
-	def check_upgrade(self):
-		if self.rgd == self.dr.rgd_l and self.eng == self.dr.eng_l and self.g_cap == self.dr.g_cap_l:
-			return
-		self.dr_spg.empty()
-		if self.rgd != self.dr.rgd_l:
-			self.dr_h = self.get_drill_sp(HEAD, self.dr.rgd_l)
-			self.rgd = self.dr.rgd_l
-		if self.eng != self.dr.eng_l:
-			self.dr_b = self.get_drill_sp(BODY, self.dr.eng_l)
-			self.eng = self.dr.eng_l
-		if self.g_cap != self.dr.g_cap_l:
-			self.dr_f = [self.get_drill_sp(SFLAME, self.dr.g_cap_l), self.get_drill_sp(LFLAME, self.dr.g_cap_l)]
-		self.dr_spg.add(self.dr_h[self.dir])
-		self.dr_spg.add(self.dr_b[self.dir])
-		self.dr_spg.add(self.dr_f[self.speedup][self.dir])
-
-	def get_drill_sp(self, part, level):
-		ret = [None]
-		xx = [SCR_CEN_R, SCR_CEN_R, SCR_CEN_R, SCR_CEN_R, SCR_CEN_R]
-		yy = [SCR_CEN_C, SCR_CEN_C, SCR_CEN_C, SCR_CEN_C, SCR_CEN_C]
-		if part == HEAD:
-			for d in range(1, 5):
-				xx[d], yy[d] = xx[d] + D_XY[d][0], yy[d] + D_XY[d][1]
-		elif part == SFLAME or part == LFLAME:
-			for d in range(1, 5):
-				xx[d], yy[d] = xx[d] - D_XY[d][0], yy[d] - D_XY[d][1]
-		for d in range(1, 5):
-			xx[d], yy[d] = tool.b_to_p_tl(xx[d], yy[d])
-		ret.append(SpriteMulti(DR_IMG_URL[part], xx[1], yy[1], 1, level))
-		ret[-1].set_colorkey((255, 255, 255))
-		ret.append(SpriteMulti(DR_IMG_URL[part], xx[2], yy[2], 2, level))
-		ret[-1].set_colorkey((255, 255, 255))
-		ret.append(SpriteMulti(DR_IMG_URL[part], xx[3], yy[3], 1, level))
-		ret[-1].flip_images()
-		ret[-1].set_colorkey((255, 255, 255))
-		ret.append(SpriteMulti(DR_IMG_URL[part], xx[4], yy[4], 2, level))
-		ret[-1].flip_images(False, True)
-		ret[-1].set_colorkey((255, 255, 255))
-		return ret
+		self.info = Game_Info(self)
+		self.speed, self.pixel, self.nr, self.nc, self.mv_timer = SPEED_LEVEL[0][0], 0, 0, 0, SPEED_LEVEL[0][0][1]
 
 	def refresh(self, ctrl: Control):
-		if self.upgrade:
-			self.check_upgrade()
-		self.upgrade = 0
-		if not self.over and self.dr.p_cur == 0 and (self.dr.money == 0 or not self.mp.in_shop(PETROL_SHOP, self.r, self.c)):
-			self.over = 1
-			glb.pages.append(PageEasy(SpriteEasy(PAGE_URL[P_OVER])))
-		if ctrl.get_key(CTRL_ESC) != CTRL_NONE:
-			self.dr.r, self.dr.c = self.r, self.c
+		self.update_fps()
+		if ctrl.get_key(CTRL_ESC):
 			glb.pages.append(Page_Pause(self.mp, self.dr))
-		if ctrl.get_key(CTRL_TAB) != CTRL_NONE:
-			self.switch_info()
-		if not self.is_moving:
-			if ctrl.get_press(CTRL_U, CTRL_D, CTRL_L, CTRL_R) != CTRL_NONE:
-				d = CTRL_DIR[ctrl.get_press(CTRL_U, CTRL_D, CTRL_L, CTRL_R)]
-				self.try_move(d, ctrl.get_press(CTRL_SH) != CTRL_NONE)
-		else:
+			return PAGE_NONE
+		if ctrl.get_key(CTRL_TAB):
+			self.show_info += 1
+			self.show_info %= 6
+		if ctrl.get_key(CTRL_INTER[1]):
+			self.show_npc ^= 1
+		if not self.drill.is_moving:
+			key = ctrl.get_press(CTRL_L, CTRL_R, CTRL_D, CTRL_U)
+			if key:
+				self.try_move(key, ctrl.get_press(CTRL_SH) != CTRL_NONE)
+			key = ctrl.get_key(CTRL_ENTER)
+			if key:
+				if self.mp.in_shop(P_SHOP, self.dr.r, self.dr.c):
+					self.try_fillp()
+				elif self.mp.in_shop(G_SHOP, self.dr.r, self.dr.c):
+					self.try_fillg()
+				elif self.mp.in_shop(R_SHOP, self.dr.r, self.dr.c):
+					self.try_repair()
+				elif self.mp.in_shop(O_SHOP, self.dr.r, self.dr.c):
+					self.try_sell()
+				elif self.mp.in_shop(D_SHOP, self.dr.r, self.dr.c):
+					glb.pages.append(Page_DShop(self.dr, self.drill))
+					return PAGE_NONE
+		self.drill.update()
+		if self.drill.is_moving:
 			self.move()
-		if not self.is_moving and ctrl.get_key(CTRL_INTER) != CTRL_NONE:
-			if self.mp.in_shop(PETROL_SHOP, self.r, self.c):
-				self.try_fill_p()
-			elif self.mp.in_shop(GAS_SHOP, self.r, self.c):
-				self.try_fill_g()
-			elif self.mp.in_shop(ORES_SHOP, self.r, self.c):
-				self.try_sell()
-			elif self.mp.in_shop(DRILL_SHOP, self.r, self.c):
-				glb.pages.append(Page_Shop(self.dr))
-				self.upgrade = 1
-
-		self.cloud_update()
-		self.sky_spg.update()
-		self.cld_spg.update()
-		self.bg_spg.update()
-		self.dr_spg.update()
+		self.bg.update()
 		if self.show_info:
-			self.refresh_info()
+			self.info.update(self.show_info)
 		return PAGE_NONE
 
+	def try_fillp(self):
+		pre = self.dr.p
+		self.dr.p = min(self.dr.p_max, self.dr.p + self.dr.money * P_COST[1] // P_COST[0])
+		self.dr.money -= (self.dr.p - pre) * P_COST[0] // P_COST[1]
+
+	def try_fillg(self):
+		pre = self.dr.g
+		self.dr.g = min(self.dr.g_max, self.dr.g + self.dr.money * G_COST[1] // G_COST[0])
+		self.dr.money -= (self.dr.g - pre) * G_COST[0] // G_COST[1]
+
+	def try_repair(self):
+		pre = self.dr.h
+		self.dr.h = min(self.dr.h_max, self.dr.h + self.dr.money * R_COST[1] // R_COST[0])
+		self.dr.money -= (self.dr.h - pre) * R_COST[0] // R_COST[1]
+
+	def try_sell(self):
+		money = 0
+		for ore in self.dr.carry:
+			money += get_val(ore) * self.dr.carry[ore]
+			self.dr.carry[ore] = 0
+		self.dr.money += money
+		self.dr.o = 0
+		glb.achieve.vals['tot-money'] += money
+
 	def try_move(self, d, speedup):
-		nr, nc = self.r + D_XY[d][0], self.c + D_XY[d][1]
-		if not self.mp.in_bound(nr, nc):
+		nr, nc = self.dr.r + D_XY[d][0], self.dr.c + D_XY[d][1]
+		if not self.mp.in_map(nr, nc):
 			return
-		if self.dr.p_cur <= 0:
+		if self.dr.r != 0 and nr != 0 and self.dr.p <= 0:
 			return
-		if self.dr.g_cur <= 0:
+		if (is_ore(self.mp.mp[nr][nc]) or is_dirt(self.mp.mp[nr][nc]) or is_chest(self.mp.mp[nr][nc])) and self.dr.h <= 0:
+			return
+		if self.dr.g <= 0:
 			speedup = 0
-		self.speed = tool.get_speed_level(self.mp.mp[nr][nc], self.dr.rgd_l, self.dr.eng_l, speedup)
-		if self.speed[0] == 0:
+		speed = get_speed_level(self.mp.mp[nr][nc], self.dr.rgd_l, self.dr.eng_l, speedup)
+		if speed[0] == 0:
 			return
+
+		self.prepare_move(d, speedup, nr, nc, speed)
+
+	def prepare_move(self, d, speedup, nr, nc, speed):
+		if speedup:
+			self.dr.g -= 1
+			self.dr.g = max(self.dr.g, 0)
 		self.nr, self.nc = nr, nc
-		self.is_moving = 1
+		self.speed = speed
 		self.mv_timer = self.speed[1]
 		self.pixel = 0
-		if d == self.dir and self.speedup == speedup:
-			return
-		self.dr_spg.empty()
-		self.dir = d
-		self.speedup = speedup
-		self.dr_spg.add(self.dr_h[d])
-		self.dr_spg.add(self.dr_b[d])
-		self.dr_spg.add(self.dr_f[speedup][d])
+		self.drill.is_moving = 1
+		self.drill.speedup = speedup
+		self.drill.dir = d
+		if is_ore(self.mp.mp[nr][nc]) or is_dirt(self.mp.mp[nr][nc]) or is_chest(self.mp.mp[nr][nc]):
+			self.drill.is_drilling = 1
 
 	def move(self):
-		if self.dr.p_cur <= 0:
-			self.is_moving = 0
-			return
-		self.dr.p_cur -= 1 * (self.dr.eng_l + 1)
-		if self.dr.p_cur < 0:
-			self.dr.p_cur = 0
-		rd, rsp, = D_MP[self.dir], 0
+		if self.dr.r != 0 or self.nr != 0:
+			self.dr.p -= 1
+			self.dr.p = max(self.dr.p, 0)
+		d, spd = self.drill.dir, 0
 		self.mv_timer -= 1
 		if self.mv_timer == 0:
 			self.pixel += self.speed[0]
-			rsp = self.speed[0]
+			spd = self.speed[0]
 			self.mv_timer = self.speed[1]
-		if self.pixel == BLOCK_SZ:
-			self.r, self.c = self.nr, self.nc
-			if self.speedup:
-				self.dr.g_cur -= 1
-			self.pixel = 0
-			self.is_moving = 0
-			self.move_finish()
-		if rsp == 0:
+		if spd == 0:
 			return
-		self.sky_spg.move(rd, rsp)
-		self.cld_spg.move(rd, rsp)
-		self.bg_spg.move(rd, rsp)
-		self.mp_spg.move(rd, rsp)
+		r, c = self.dr.r, self.dr.c
+		nr, nc = self.nr, self.nc
+		if d == D_D or d == D_U:
+			if self.mp.in_bound_r(r) and self.mp.in_bound_r(nr):
+				self.bg.move(D_MP[d], spd)
+				self.map.move(D_MP[d], spd)
+				self.mp.r = nr
+			else:
+				self.drill.move(BG_DIR_MP[d], spd)
+		else:
+			if self.mp.in_bound_c(c) and self.mp.in_bound_c(nc):
+				self.bg.move(D_MP[d], spd)
+				self.map.move(D_MP[d], spd)
+				self.mp.c = nc
+			else:
+				self.drill.move(BG_DIR_MP[d], spd)
+		if self.pixel == BLOCK_SZ:
+			self.move_finish()
 
 	def move_finish(self):
-		glb.achieve.vals['tot_move'] += 1
-		if self.r <= self.mp.g_level:
-			return
-		if self.mp.mp[self.r][self.c] != EMPTY:
-			glb.achieve.vals[self.mp.mp[self.r][self.c]] += 1
-			if self.mp.mp[self.r][self.c] != DIRT:
-				glb.achieve.vals['tot_ore'] += 1
-				if self.dr.o_cur < self.dr.o_cap:
-					self.dr.carry += ORES_VALUE[self.mp.mp[self.r][self.c]]
-					self.dr.o_cur += 1
-			self.mp.mp[self.r][self.c] = EMPTY
-			self.mp_sp[self.r][self.c].kill()
+		self.dr.r, self.dr.c = self.nr, self.nc
+		self.pixel = 0
+		self.drill.is_moving = 0
+		self.drill.is_drilling = 0
 
-	def try_fill_p(self):
-		pre = self.dr.p_cur
-		self.dr.p_cur = min(self.dr.p_cap, self.dr.p_cur + self.dr.money // PETROL_COST)
-		self.dr.money -= (self.dr.p_cur - pre) * PETROL_COST
+		r, c = self.nr, self.nc
+		if is_dirt(self.mp.mp[r][c]):
+			self.cover_dirt(self.mp.mp[r][c])
+		if is_ore(self.mp.mp[r][c]):
+			self.cover_ore(self.mp.mp[r][c])
+		if is_chest(self.mp.mp[r][c]):
+			self.cover_chest(self.mp.mp[r][c])
+		if is_NPC(self.mp.mp[r][c]):
+			self.cover_npc(self.mp.mp[r][c])
+		glb.achieve.vals['tot-move'] += 1
+		self.map.update_map(r, c)
 
-	def try_fill_g(self):
-		pre = self.dr.g_cur
-		self.dr.g_cur = min(self.dr.g_cap, self.dr.g_cur + self.dr.money // GAS_COST)
-		self.dr.money -= (self.dr.g_cur - pre) * GAS_COST
+	def cover_dirt(self, idx):
+		glb.achieve.vals[idx] += 1
+		glb.achieve.vals['tot-dirt'] += 1
+		self.dr.h -= get_damage(idx)
+		self.dr.h = max(self.dr.h, 0)
 
-	def try_sell(self):
-		glb.achieve.vals['tot_money'] += self.dr.carry
-		self.dr.money += self.dr.carry
-		self.dr.carry = self.dr.o_cur = 0
+	def cover_ore(self, idx):
+		glb.achieve.vals[idx] += 1
+		glb.achieve.vals['tot-ore'] += 1
+		if self.dr.o < self.dr.o_max:
+			self.dr.o += 1
+			self.dr.carry[idx] += 1
+		self.dr.h -= get_damage(idx)
+		self.dr.h = max(self.dr.h, 0)
 
-	def cloud_update(self):
-		for sp in self.cld_spg.sprites():
-			if isinstance(sp, SpriteEasy):
-				continue
-			if not sp.check_in_map(self.sky.rect.x, self.mp.m*BLOCK_SZ):
-				logging.debug('remove')
-				self.cld_spg.remove(sp)
-				self.cloud_num -= 1
-		if self.cloud_num >= self.cloud_num_max:
-			return
-		if random.randint(1, 100) <= CLOUD_GEN_SPEED:
-			self.cld_spg.add(self.generate_cloud())
-			self.cloud_num += 1
+	def cover_chest(self, idx):
+		glb.achieve.vals[idx] += 1
+		glb.achieve.vals['tot-chest'] += 1
+		self.dr.money += get_val(idx)
+		self.dr.h -= get_damage(idx)
+		self.dr.h = max(self.dr.h, 0)
 
-	def switch_info(self):
+	def cover_npc(self, idx):
+		glb.achieve.vals[idx] += 1
+		glb.achieve.vals['tot-npc'] += 1
+		self.mp.npc[idx] = 1
+
+	def update_fps(self):
+		self.frame_cnt += 1
+		if self.frame_cnt == FPS // 4:
+			now = datetime.now()
+			diff = now - self.pre_time
+			self.pre_time = now
+			self.pre_fps = 1 / diff.total_seconds() * (FPS // 4)
+			self.frame_cnt = 0
+
+	def draw(self, scr):
+		self.bg.draw(scr)
+		self.map.draw(scr)
+		self.drill.draw(scr)
 		if self.show_info:
-			self.list.pop()
-		else:
-			self.list.append(self.info)
-		self.show_info ^= 1
+			self.info.draw(scr)
+		if self.show_npc:
+			self.npc.draw(scr)
 
-	def refresh_info(self):
-		self.info.clear()
-		diff = datetime.now() - self.pre_time
-		self.pre_time = datetime.now()
-		self.info.add_row(f'FPS: {int(1 / diff.total_seconds())}')
-		self.info.add_row(f'屏幕大小: {SCR_N}行, {SCR_M}列, 地图大小:{self.mp.n}行, {self.mp.m}列, 当前在: {self.r}行, {self.c}列')
-		self.info.add_row(f'当前一共有 {self.tree_num} 棵树, 当前一共有 {self.cloud_num} 朵云')
-		self.info.add_row(f'金钱: {self.dr.money}')
-		self.info.add_row(f'油量: {self.dr.p_cur} / {self.dr.p_cap}, 推进剂: {self.dr.g_cur} / {self.dr.g_cap}')
-		self.info.add_row(f'携带矿石: {self.dr.o_cur} / {self.dr.o_cap}, 当带矿石的价值: {self.dr.carry}')
-		self.info.add_row(f'钻头等级: {self.dr.rgd_l}, 引擎等级: {self.dr.eng_l}')
-		self.info.add_row(f'油箱等级: {self.dr.p_cap_l}, 推进剂等级: {self.dr.eng_l}, 矿物容量等级: {self.dr.o_cap_l}')
-		s = '当前在地下'
-		if self.r == self.mp.g_level:
-			s = '当前在地上'
-		if self.mp.in_shop(PETROL_SHOP, self.r, self.c):
-			s = '当前位于加油站'
-		if self.mp.in_shop(GAS_SHOP, self.r, self.c):
-			s = '当前位于加气站'
-		if self.mp.in_shop(ORES_SHOP, self.r, self.c):
-			s = '当前位于售卖处'
-		if self.mp.in_shop(DRILL_SHOP, self.r, self.c):
-			s = '当前位于升级店'
-		self.info.add_row(s)
-		self.info.add_row(f'存档信息:')
-		for i in range(1, 11, 2):
-			s = f'  存档 {i}:' + glb.log.logs_info[i] + f'  存档 {i+1}:' + glb.log.logs_info[i+1]
-			self.info.add_row(s)
-		self.info.add_row(f'档案:')
-		self.info.add_row(f'{BLK_DATA[DIRT]["name"]}: {glb.achieve.vals[DIRT]}, {BLK_DATA[COAL]["name"]}: {glb.achieve.vals[COAL]}')
-		self.info.add_row(f'{BLK_DATA[COPPER]["name"]}: {glb.achieve.vals[COPPER]}, {BLK_DATA[SILVER]["name"]}: {glb.achieve.vals[SILVER]}')
-		self.info.add_row(f'{BLK_DATA[GOLD]["name"]}: {glb.achieve.vals[GOLD]}, {BLK_DATA[AMETHYST]["name"]}: {glb.achieve.vals[AMETHYST]}')
-		self.info.add_row(f'{BLK_DATA[EMERALD]["name"]}: {glb.achieve.vals[EMERALD]}, {BLK_DATA[SAPPHIRE]["name"]}: {glb.achieve.vals[SAPPHIRE]}')
-		self.info.add_row(f'{BLK_DATA[RUBY]["name"]}: {glb.achieve.vals[RUBY]}, {BLK_DATA[DIAMOND]["name"]}: {glb.achieve.vals[DIAMOND]}')
-		self.info.add_row(f'总矿物: {glb.achieve.vals["tot_ore"]}')
-		self.info.add_row(f'总金钱: {glb.achieve.vals["tot_money"]}')
-		self.info.add_row(f'总移动距离: {glb.achieve.vals["tot_move"]}')
-		if self.is_moving:
-			self.info.add_row(f'当前正在移动')
-			self.info.add_row(f'移动方向为，行：{D_XY[self.dir][0]} 列：{D_XY[self.dir][1]}')
-			self.info.add_row(f'当前的移动速度为, {self.speed[0]}/{self.speed[1]} 像素每帧')
+
+TEXT_COLOR = (220, 220, 220)
+
+
+class Text:
+	def __init__(self):
+		self.list = []
+
+	def add(self, s, x = 0, y = 0, font = default_font, color = TEXT_COLOR, bold = False):
+		if bold:
+			font.bold = True
+		text = font.render(s, True, color)
+		if bold:
+			font.bold = False
+		rect = text.get_rect()
+		rect.x = x
+		rect.y = y
+		self.list.append([text, rect])
+		return rect
+
+	def add_row(self, s, x = 0, gap = BLOCK_SZ, font = default_font, color = TEXT_COLOR, bold = False):
+		if bold:
+			font.bold = True
+		text = font.render(s, True, color)
+		if bold:
+			font.bold = False
+		rect = text.get_rect()
+		rect.x = x
+		if len(self.list) == 0:
+			rect.y = 0
 		else:
-			self.info.add_row(f'当前没在移动')
+			rect.y = self.list[-1][1].y + gap
+		self.list.append([text, rect])
+		return rect
+
+	def clear(self):
+		self.list.clear()
+
+	def draw(self, scr):
+		for t, r in self.list:
+			scr.blit(t, r)
+
+
+GAME_INFO_LEN = 70
+
+
+class Game_Info:
+	def __init__(self, page: Page_Game):
+		self.page = page
+		self.bg = page.bg
+		self.mp = page.mp
+		self.dr = page.dr
+		self.info = Text()
+
+	def update(self, level = 0):
+		self.info.clear()
+		if level == 1:
+			self.info.add_row(f'FPS: {int(self.page.pre_fps)}')
+			return
+		if level >= 2:
+			self.info.add_row(f'FPS: {int(self.page.pre_fps)}, 屏幕大小: {SCR_N}行, {SCR_M}列, 地图大小:{self.mp.n}行, {self.mp.m}列')
+		if level >= 3:
+			self.info.add_row(f'共有 {self.bg.tree_num} 棵树, {self.bg.cloud_num} 朵云, {self.bg.bird_num}只鸟')
+		if level >= 2:
+			self.info.add_row(f'钻机位置: {self.dr.r}行, {self.dr.c}列, 屏幕中心位置: {self.mp.r}行, {self.mp.c}列, 钻机所处格子ID: {self.mp.mp[self.dr.r][self.dr.c]}')
+		if level >= 3:
+			self.info.add_row(f'钻头等级：{self.dr.rgd_l}, 装甲等级：{self.dr.h_l}, 燃油箱等级：{self.dr.p_l}, 氮气箱等级：{self.dr.g_l}，引擎等级：{self.dr.eng_l}')
+			self.info.add_row(f'金钱：{self.dr.money}, 燃油量：{self.dr.p}, 氮气量：{self.dr.g}，矿石容量：{self.dr.o}，血量：{self.dr.h}')
+			s = '携带矿物：'
+			for ore in ORES:
+				s += f'{get_name(ore)}: {self.dr.carry[ore]} '
+				if len(s) > GAME_INFO_LEN:
+					self.info.add_row(s)
+					s = ''
+			if s != '':
+				self.info.add_row(s)
+		if level >= 2:
+			s = '当前在地面'
+			if self.mp.in_under(self.dr.r, self.dr.c):
+				s = '当前在地下'
+			elif self.mp.in_cave(self.dr.r, self.dr.c):
+				s = '当前在洞穴'
+			elif self.mp.in_shop(P_SHOP, self.dr.r, self.dr.c):
+				s = '当前在加油站'
+			elif self.mp.in_shop(O_SHOP, self.dr.r, self.dr.c):
+				s = '当前在售卖处'
+			elif self.mp.in_shop(G_SHOP, self.dr.r, self.dr.c):
+				s = '当前在加气站'
+			elif self.mp.in_shop(R_SHOP, self.dr.r, self.dr.c):
+				s = '当前在维修站'
+			elif self.mp.in_shop(D_SHOP, self.dr.r, self.dr.c):
+				s = '当前在装备站'
+			self.info.add_row(s)
+		if level >= 4:
+			s = '已获救NPC：'
+			for npc in NPCS:
+				if self.mp.npc[npc]:
+					s += f'{get_name(npc)} '
+					if len(s) > GAME_INFO_LEN:
+						self.info.add_row(s)
+						s = '  '
+			if s != '':
+				self.info.add_row(s)
+			s = '未获救NPC；'
+			for npc in NPCS:
+				if not self.mp.npc[npc]:
+					s += f'{get_name(npc)} '
+					if len(s) > GAME_INFO_LEN:
+						self.info.add_row(s)
+						s = '  '
+			if s != '':
+				self.info.add_row(s)
+		if level >= 5:
+			self.info.add_row(f'档案：', color = (255, 255, 0), bold = True)
+			s = '  物块：'
+			for dirt in DIRTS:
+				s += f'{get_name(dirt)}: {glb.achieve.vals[dirt]} '
+				if len(s) > GAME_INFO_LEN:
+					self.info.add_row(s)
+					s = '    '
+			if s != '':
+				self.info.add_row(s)
+			s = '  矿物：'
+			for ore in ORES:
+				s += f'{get_name(ore)}: {glb.achieve.vals[ore]} '
+				if len(s) > GAME_INFO_LEN:
+					self.info.add_row(s)
+					s = '    '
+			if s != '':
+				self.info.add_row(s)
+			s = '  宝箱：'
+			for chest in CHESTS:
+				s += f'{get_name(chest)}: {glb.achieve.vals[chest]} '
+				if len(s) > GAME_INFO_LEN:
+					self.info.add_row(s)
+					s = '    '
+			if s != '':
+				self.info.add_row(s)
+			s = '  NPC：'
+			for npc in NPCS:
+				s += f'{get_name(npc)}: {glb.achieve.vals[npc]} '
+				if len(s) > GAME_INFO_LEN:
+					self.info.add_row(s)
+					s = '    '
+			if s != '':
+				self.info.add_row(s)
+			self.info.add_row(f'存档：', color = (255, 255, 0), bold = True)
+			for i in range(1, 11, 2):
+				s = f'  存档 {i}:' + glb.log.logs_info[i] + f'  存档 {i + 1}:' + glb.log.logs_info[i + 1]
+				self.info.add_row(s)
+
+
+	def draw(self, scr):
+		self.info.draw(scr)
+
+	def empty(self):
+		self.info.clear()
+
+
+def init_Page_Game():
+	return Page_Game()
+
+
+def init_game(log_id = 0):
+	if log_id != 0:
+		glb.pages.append(Page_Game(log_id))
+	else:
+		result = []
+		init_thread = threading.Thread(target = lambda: result.append(init_Page_Game()))
+		init_thread.start()
+
+		# play cg
+
+		init_thread.join()
+		glb.pages.append(result[0])
+		'''
+		glb.pages.append(init_Page_Game())
+		'''
+
+
 

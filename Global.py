@@ -3,15 +3,12 @@ from Control import Control
 from Page_YN import Page_YN
 from Achieve import Achieve
 from Log import Log
-import ToolFunc as tool
 
-screen = pg.display.set_mode((SCR_W, SCR_H))
-clock = pg.time.Clock()
 ctrl = Control()
-frame_time = key_time = 0
-pages = []
 achieve = Achieve()
 log = Log()
+frame_time = key_time = 0
+pages = []
 
 
 def refresh_display():
@@ -20,9 +17,9 @@ def refresh_display():
 	pg.display.update(pages[-1].update_range)
 
 
-def get_YN():
+def get_YN(info):
 	global frame_time, key_time
-	pages.append(Page_YN())
+	pages.append(Page_YN(info))
 	refresh_display()
 	have_focus = 1
 	while True:
@@ -37,29 +34,33 @@ def get_YN():
 				ctrl.del_key(event.key)
 			elif event.type == pg.WINDOWFOCUSLOST:
 				have_focus = 0
+				ctrl.clear()
 			elif event.type == pg.WINDOWFOCUSGAINED:
 				have_focus = 1
+				ctrl.clear()
+			elif event.type == pg.MOUSEBUTTONDOWN:
+				if event.button == 1:
+					ctrl.mouse_down(event.pos)
+			elif event.type == pg.MOUSEBUTTONUP:
+				if event.button == 1:
+					ctrl.mouse_up()
 		if have_focus:
 			status, data = pages[-1].refresh(ctrl)
-			if status == PAGE_NONE:
-				continue
 			if status == PAGE_EXIT:
 				pages.pop()
 				return data
 
 
 def soft_quit():
-	status = get_YN()
+	status = get_YN(f'请确认是否退出游戏，所有未保存数据均会丢失')
 	if status:
-		tool.force_quit()
-	else:
-		return
+		force_quit()
 
 
 def refresh_page():
 	status = pages[-1].refresh(ctrl)
-	if status == PAGE_NONE:
+	if not status:
 		return
 	if len(pages) == 1:
-		tool.force_quit()
+		force_quit()
 	pages.pop()

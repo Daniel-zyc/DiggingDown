@@ -1,34 +1,47 @@
-from Constant import *
-from Global import *
+import pygame
+import imageio
+from PIL import Image
 
-group1 = pg.sprite.Group()
-group2 = pg.sprite.Group()
+# 初始化Pygame
+pygame.init()
 
-sp1 = pg.sprite.Sprite()
-sp1.image = pg.image.load(BLK_IMG_URL[DIAMOND])
-sp1.rect = sp1.image.get_rect()
-sp1.rect.x, sp1.rect.y = 0, 0
+# 设置屏幕尺寸
+screen_width, screen_height = 800, 600
+screen = pygame.display.set_mode((screen_width, screen_height))
+clock = pygame.time.Clock()
 
-sp2 = pg.sprite.Sprite()
-sp2.image = pg.image.load(BLK_IMG_URL[COPPER])
-sp2.rect = sp2.image.get_rect()
-sp2.rect.x, sp2.rect.y = 12, 0
+# 加载gif图像
+gif_path = '1.gif'
+frames = imageio.mimread(gif_path)
 
-sp3 = pg.sprite.Sprite()
-sp3.image = pg.image.load(BLK_IMG_URL[EMERALD])
-sp3.rect = sp3.image.get_rect()
-sp3.rect.x, sp3.rect.y = 12, 12
+# 将每一帧转换为Surface对象
+surfaces = []
+for frame in frames:
+    image = Image.fromarray(frame)
+    surface = pygame.image.fromstring(image.tobytes(), image.size, image.mode)
+    surfaces.append(surface)
 
-group2.add(sp2)
-group1.add(sp1)
+# 播放动画
+frame_index = 0
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
 
-for i in range(0, FPS*4):
-	clock.tick(FPS)
+    # 绘制当前帧
+    screen.fill((0, 0, 0))
+    screen.blit(surfaces[frame_index], (100, 100))
+    pygame.display.flip()
 
-	group1.draw(screen)
-	group2.draw(screen)
+    # 延迟一段时间
+    pygame.time.delay(100)  # 每帧之间的延迟时间，可以根据需要调整
 
-	if i == 96:
-		group1.add(sp3)
+    # 切换到下一帧
+    frame_index = (frame_index + 1) % len(surfaces)
 
-	pg.display.update()
+    # 控制帧率
+    clock.tick(15)  # 帧率，可以根据需要调整
+
+# 退出Pygame
+pygame.quit()

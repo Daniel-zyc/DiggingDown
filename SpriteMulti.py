@@ -1,18 +1,18 @@
 from Constant import *
 from Sprite import Sprite
-import ToolFunc as tool
 
 
 class SpriteMulti(Sprite):
-	def __init__(self, img_url = None, x = None, y = None, idx1 = None, idx2 = None):
+	def __init__(self, img_url, x = None, y = None):
 		super().__init__()
-		self.images = self.image = None
 		self.image_idx = self.image_timer = 0
-		if img_url is not None:
-			self.images = tool.load_multi_img(img_url, idx1, idx2)
-			self.image = self.images[self.image_idx]
-			self.rect = self.image.get_rect()
+		self.images = load_gif(img_url)
+		self.image = self.images[self.image_idx]
+		self.rect = self.image.get_rect()
+		if y is not None:
 			self.rect.x, self.rect.y = x, y
+		else:
+			self.rect.center = (SCR_CEN_X, SCR_CEN_Y)
 
 	def roll_image(self):
 		self.image_timer -= 1
@@ -21,7 +21,7 @@ class SpriteMulti(Sprite):
 			if self.image_idx >= len(self.images):
 				self.image_idx = 0
 			self.image = self.images[self.image_idx]
-			self.image_timer = IMG_ROLL_SP // len(self.images)
+			self.image_timer = IMG_ROLL_SPD // len(self.images)
 
 	def flip_images(self, arg1 = True, arg2 = False):
 		for i in range(0, len(self.images)):

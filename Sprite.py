@@ -9,3 +9,6 @@ class Sprite(pg.sprite.Sprite):
 	def move(self, d: int, sp: int):
 		self.rect.x += D_XY[d][0] * sp
 		self.rect.y += D_XY[d][1] * sp
+
+	def draw(self, scr):
+		scr.blit(self.image, self.rect)
