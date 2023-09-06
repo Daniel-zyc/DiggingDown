@@ -12,6 +12,7 @@ class Map:
 		self.mp = None
 		self.fog = None
 		self.npc = None
+		self.saved_npc = 0
 
 	def in_dirt(self, r, c):
 		return 1 <= r <= self.n and 1 <= c <= self.m
