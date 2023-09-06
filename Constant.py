@@ -385,6 +385,8 @@ ACHIEVE_DEFAULT['tot-move'] = 0
 if not os.path.exists(ACHIEVE_URL):
 	open(ACHIEVE_URL, mode = 'w')
 
+CG_IMG_URL = './assets/img/cg/{}.png'
+CG_LEN = 7
 
 default_font = pg.font.SysFont('kaiti', 20)
 screen = pg.display.set_mode((SCR_W, SCR_H))

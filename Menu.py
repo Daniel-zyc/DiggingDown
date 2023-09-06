@@ -5,22 +5,23 @@ import random
 
 
 class Background_Sp(Sprite):
-    def __init__(self):
+    def __init__(self, img_url = None, fill = True):
         super().__init__()
-        self.image = pg.image.load(SKY_IMG_URL.format(random.randint(0, SKY_LEN - 1)))
+        if img_url is None:
+            self.image = pg.image.load(SKY_IMG_URL.format(random.randint(0, SKY_LEN - 1)))
+        else:
+            self.image = pg.image.load(img_url)
+
         image_height = self.image.get_height()
         image_width = self.image.get_width()
 
         ratio_h = SCR_H / image_height
         ratio_w = SCR_W / image_width
 
-        if SCR_H <= image_height and SCR_W <= image_width:
-            ratio = 1
+        if fill:
+            ratio = max(ratio_w, ratio_h)
         else:
-            if ratio_w >= ratio_h:
-                ratio = ratio_w
-            else:
-                ratio = ratio_h
+            ratio = min(ratio_w, ratio_h)
 
         self.image = pg.transform.scale(self.image, (image_width * ratio, image_height * ratio))
         self.rect = self.image.get_rect()

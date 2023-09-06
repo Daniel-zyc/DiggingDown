@@ -1062,7 +1062,7 @@ def init_game(log_id = 0):
 		init_thread = threading.Thread(target = lambda: result.append(init_Page_Game()))
 		init_thread.start()
 
-		# play cg
+		glb.play_CG()
 
 		init_thread.join()
 		glb.pages.append(result[0])
