@@ -649,6 +649,8 @@ class Page_Game(Page):
 		self.drill.dir = d
 		if is_ore(self.mp.mp[nr][nc]) or is_dirt(self.mp.mp[nr][nc]) or is_chest(self.mp.mp[nr][nc]):
 			self.drill.is_drilling = 1
+		if self.drill.is_drilling == 1:
+			dig_sound.play(-1)
 
 	def move(self):
 		if self.dr.r != 0 or self.nr != 0:
@@ -684,9 +686,11 @@ class Page_Game(Page):
 	def move_finish(self):
 		self.dr.r, self.dr.c = self.nr, self.nc
 		self.pixel = 0
+		if self.drill.is_drilling == 1:
+			dig_sound.stop()
+			a=1
 		self.drill.is_moving = 0
 		self.drill.is_drilling = 0
-
 		r, c = self.nr, self.nc
 		if is_dirt(self.mp.mp[r][c]):
 			self.cover_dirt(self.mp.mp[r][c])

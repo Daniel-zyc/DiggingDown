@@ -7,7 +7,6 @@ from PIL import Image
 pg.init()
 logging.basicConfig(format = "%(levelname)s: %(message)s", level = logging.DEBUG)
 
-
 # 控制按键映射（添加控制修改三个地方，控制映射值，控制列表，按键到控制的映射）
 # 空控制（用于表示没有触发任何控制的情况）
 CTRL_NONE = 0    # 不可变
@@ -393,6 +392,12 @@ for i in range(0, NPC_TOT):
 	image_buf[tmp] = pg.image.load(NPC_IMG_URL.format(i))
 image_buf[FOG] = pg.image.load(FOG_IMG_URL)
 
+press_sound=pg.mixer.Sound("./assets/audio/press.wav")
+menu_sound=pg.mixer.Sound("./assets/audio/menu.wav")
+land_sound=pg.mixer.Sound("./assets/audio/land.wav")
+under_sound=pg.mixer.Sound("./assets/audio/under.wav")
+dig_sound=pg.mixer.Sound("./assets/audio/dig.wav")
+option_sound=pg.mixer.Sound("./assets/audio/option.wav")
 
 def swap(a, b):
 	tmp = a
@@ -490,7 +495,7 @@ def fog_dist(r, c, rr, cc):
 
 
 def get_speed_level(blk_tp, dr_rgd_l, dr_eng_l, speedup):
-	return SPEED_LEVEL[speedup][SPEED_LEVEL_MAX]
+	#return SPEED_LEVEL[speedup][SPEED_LEVEL_MAX]
 	dr_rgd = DRILL_DATA['rgd'][dr_rgd_l]
 	dr_eng = DRILL_DATA['eng'][dr_eng_l]
 	tmp = 4
