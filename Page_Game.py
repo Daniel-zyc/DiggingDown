@@ -657,6 +657,8 @@ class Page_Game(Page):
 		self.pre_time = datetime.now()
 		self.info = Game_Info(self)
 		self.speed, self.pixel, self.nr, self.nc, self.mv_timer = SPEED_LEVEL[0][0], 0, 0, 0, SPEED_LEVEL[0][0][1]
+		self.is_finish=0
+
 
 	def refresh(self, ctrl: Control):
 		self.update_fps()
@@ -872,6 +874,9 @@ class Page_Game(Page):
 		glb.achieve.vals[idx] += 1
 		glb.achieve.vals['tot-npc'] += 1
 		self.mp.npc[idx] = 1
+		self.mp.saved_npc+=1
+		if self.mp.saved_npc==NPC_TOT:
+			 
 
 	def update_fps(self):
 		self.frame_cnt += 1
@@ -883,6 +888,10 @@ class Page_Game(Page):
 			self.frame_cnt = 0
 
 	def draw(self, scr):
+		if self.mp.in_cave(self.dr.r,self.dr.c):
+			play_bgm("under_sound")
+		else:
+			play_bgm("land_sound")
 		self.bg.draw(scr)
 		self.map.draw(scr)
 		self.drill.draw(scr)

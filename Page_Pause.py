@@ -42,6 +42,8 @@ class Page_Pause(Page):
 		elif ctrl.get_key(CTRL_OPT[4]) or ctrl.get_click(self.opt[4].rect):
 			glb.pages.append(Page_Info())
 		elif ctrl.get_key(CTRL_OPT[5]) or ctrl.get_click(self.opt[5].rect):
-			glb.pages.pop(-2)
-			return PAGE_EXIT
+			status=glb.get_YN(f'请确认是否退出游戏，所有未保存数据均会丢失')
+			if status:
+				glb.pages.pop(-2)
+				return PAGE_EXIT
 		return PAGE_NONE

@@ -412,6 +412,15 @@ land_sound=pg.mixer.Sound("./assets/audio/land.wav")
 under_sound=pg.mixer.Sound("./assets/audio/under.wav")
 dig_sound=pg.mixer.Sound("./assets/audio/dig.wav")
 option_sound=pg.mixer.Sound("./assets/audio/option.wav")
+option_sound.set_volume(1)
+audio_map={
+	"press_sound": press_sound,	
+	"menu_sound":menu_sound,
+	"land_sound":land_sound,
+	"under_sound":under_sound,
+	"dig_sound":dig_sound,
+	"option_sound":option_sound
+}
 
 def swap(a, b):
 	tmp = a
@@ -509,7 +518,7 @@ def fog_dist(r, c, rr, cc):
 
 
 def get_speed_level(blk_tp, dr_rgd_l, dr_eng_l, speedup):
-	#return SPEED_LEVEL[speedup][SPEED_LEVEL_MAX]
+	return SPEED_LEVEL[speedup][SPEED_LEVEL_MAX]
 	dr_rgd = DRILL_DATA['rgd'][dr_rgd_l]
 	dr_eng = DRILL_DATA['eng'][dr_eng_l]
 	tmp = 4
@@ -521,3 +530,15 @@ def get_speed_level(blk_tp, dr_rgd_l, dr_eng_l, speedup):
 	tmp += dr_eng + 1
 	tmp = min(tmp, SPEED_LEVEL_MAX)
 	return SPEED_LEVEL[speedup][tmp]
+
+
+cur_bgm="menu_sound"
+audio_map[cur_bgm].play(-1)
+def play_bgm(bgm):
+	global	cur_bgm
+	if cur_bgm==bgm:
+		pass
+	else:
+		audio_map[cur_bgm].stop()
+		cur_bgm=bgm
+		audio_map[cur_bgm].play(-1) 

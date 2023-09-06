@@ -44,3 +44,8 @@ class Page_Menu(Page):
         elif ctrl.get_key(CTRL_OPT[5]) or ctrl.get_click(self.opt[5].rect):
             glb.pages.append(Page_Info())
         return PAGE_NONE
+    
+    def draw(self, screen):
+        play_bgm("menu_sound")
+        for obj in self.list:
+            obj.draw(screen)

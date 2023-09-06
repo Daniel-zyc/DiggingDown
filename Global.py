@@ -11,7 +11,7 @@ achieve = Achieve()
 log = Log()
 have_focus = frame_time = key_time = 1
 pages = []
-cur_bgm=menu_sound
+
 
 def refresh_display():
 	pg.draw.rect(screen, (0, 0, 0), pages[-1].update_range)

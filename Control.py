@@ -29,6 +29,7 @@ class Control:
 			return 0
 		if rect.collidepoint(self.mouse_pos):
 			self.mouse_pos = None
+			option_sound.play()
 			return True
 		return False
 
@@ -38,7 +39,9 @@ class Control:
 			if self.ctrls[arg] > self.ctrls[c]:
 				c, t = arg, self.ctrls[arg]
 		self.ctrls[c] = 0
-		if c != CTRL_NONE: logging.debug(f'controller get key: {c}')
+		if c != CTRL_NONE: 
+			press_sound.play()
+			logging.debug(f'controller get key: {c}')
 		return c
 
 	def get_press(self, *args: int):
