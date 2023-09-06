@@ -37,7 +37,7 @@ class Page_Read(Page):
 				continue
 			if ctrl.get_key(CTRL_OPT[i]) or ctrl.get_click(self.opt[i].rect):
 				glb.pages.pop()
-				init_game()
+				init_game(i)
 				return PAGE_NONE
 		return PAGE_NONE
 

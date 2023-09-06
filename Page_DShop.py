@@ -43,12 +43,14 @@ class Page_DShop(Page):
             cst = DRILL_COST['h_max'][lv]
             self.dr.money -= cst
             self.dr.h_l += 1
+            self.dr.h_max = DRILL_DATA['h_max'][lv + 1]
             self.drill.bodys = self.drill.get_drill_sp(BODY)
         elif idx == 3:
             lv = self.dr.g_l
             cst = DRILL_COST['g_max'][lv]
             self.dr.money -= cst
             self.dr.g_l += 1
+            self.dr.g_max = DRILL_DATA['g_max'][lv + 1]
             self.drill.sflames = self.drill.get_drill_sp(SFLAME)
             self.drill.lflames = self.drill.get_drill_sp(LFLAME)
         elif idx == 4:
@@ -56,11 +58,13 @@ class Page_DShop(Page):
             cst = DRILL_COST['p_max'][lv]
             self.dr.money -= cst
             self.dr.p_l += 1
+            self.dr.p_max = DRILL_DATA['p_max'][lv + 1]
         elif idx == 5:
             lv = self.dr.o_l
             cst = DRILL_COST['o_max'][lv]
             self.dr.money -= cst
             self.dr.o_l += 1
+            self.dr.o_max = DRILL_DATA['o_max'][lv + 1]
         elif idx == 6:
             lv = self.dr.eng_l
             cst = DRILL_COST['eng'][lv]
