@@ -15,6 +15,8 @@ CTRL_NONE = 0    # 不可变
 CTRL_ESC, CTRL_ENTER, CTRL_SH, CTRL_TAB = 1000, -1000, -20, -10
 # 上、下、左、右    不可变
 CTRL_R, CTRL_D, CTRL_L, CTRL_U = 1, 2, 3, 4
+# I, J, K
+CTRL_I, CTRL_J, CTRL_K = 10, 11, 12
 # 用于使用键盘控制选项，使用 CTRL_OP[1~10] 表示选项 1~10
 CTRL_OPT = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 CTRL_INTER = [40, 41, 42]
@@ -23,7 +25,8 @@ CTRL_INTER = [40, 41, 42]
 CTRL_LIST = [
 	CTRL_NONE,
 	CTRL_ESC, CTRL_ENTER, CTRL_SH, CTRL_TAB,
-	CTRL_U, CTRL_D, CTRL_L, CTRL_R
+	CTRL_U, CTRL_D, CTRL_L, CTRL_R,
+	CTRL_I, CTRL_J, CTRL_K
 ]
 CTRL_LIST = CTRL_LIST + CTRL_OPT
 CTRL_LIST = CTRL_LIST + CTRL_INTER
@@ -38,6 +41,9 @@ KEY_TO_CTRL = {
 	pg.K_DOWN: CTRL_D, pg.K_s: CTRL_D,
 	pg.K_LEFT: CTRL_L, pg.K_a: CTRL_L,
 	pg.K_RIGHT: CTRL_R, pg.K_d: CTRL_R,
+	pg.K_i: CTRL_I,
+	pg.K_j: CTRL_J,
+	pg.K_k: CTRL_K,
 	pg.K_1: CTRL_OPT[1],  pg.K_KP1: CTRL_OPT[1],  pg.K_KP_1: CTRL_OPT[1],
 	pg.K_2: CTRL_OPT[2],  pg.K_KP2: CTRL_OPT[2],  pg.K_KP_2: CTRL_OPT[2],
 	pg.K_3: CTRL_OPT[3],  pg.K_KP3: CTRL_OPT[3],  pg.K_KP_3: CTRL_OPT[3],
@@ -92,7 +98,7 @@ PRE_LOAD = 1
 
 # 地图相关常量
 # 地图默认行、列数，必须为奇数
-MAP_N, MAP_M = 1001, 1001
+MAP_N, MAP_M = 101, 101
 
 # 空物块
 EMPTY = 0
@@ -353,6 +359,12 @@ if not os.path.exists(LOG_ROOT_URL):
 PIXEL_FONT_URL = './assets/font/pixel-font.ttf'
 LIGHT_GREEN = (127, 255, 127)
 LIGHT_RED = (255, 127, 127)
+DARK_RED = (255, 63, 63)
+DARK_GREEN = (63, 176, 63)
+P_COLOR = (255, 221, 113)
+G_COLOR = (117, 196, 255)
+O_COLOR = (200, 130, 4)
+H_COLOR = DARK_RED
 
 ACHIEVE_URL = './achieve'
 ACHIEVE_DEFAULT = {}

@@ -10,6 +10,10 @@ from SpriteMulti import SpriteMulti
 from datetime import datetime
 from Page_Pause import Page_Pause
 from Page_DShop import Page_DShop
+from Page_Key import Page_Key
+from Page_Info import Page_Info
+from Page_Achieve import Page_Achieve
+from Menu import MenuText
 import Global as glb
 import random
 import threading
@@ -433,7 +437,6 @@ class Sprite_Flame(Sprite):
 		self.shake_idx = 0
 
 	def update(self):
-		print(self.dir)
 		self.rect.x += D_XY[self.dir][0] * FLAME_SHAKE[self.shake_idx]
 		self.rect.y += D_XY[self.dir][1] * FLAME_SHAKE[self.shake_idx]
 		self.shake_idx += 1
@@ -539,6 +542,96 @@ class NPC_Sp:
 		self.npcs = None
 
 
+class Ore_Sp:
+	def __init__(self, mp: Map, dr: Drill):
+		self.mp, self.dr = mp, dr
+		self.ores = []
+		self.text = []
+		self.xy = []
+		r, c = SCR_N - 4, SCR_CEN_C - ORE_TOT // 2 * 3
+		for ore in ORES:
+			x, y = b_to_p(r, c)
+			self.ores.append(Sprite_Block(ore, x, y))
+			x += BLOCK_SZ + BLOCK_SZ
+			y += BLOCK_SZ // 2
+			self.xy.append([x, y])
+			self.text.append(MenuText(f'{self.dr.carry[ore]}', 10, posx = x, posy = y, absolute = True))
+			c += 3
+
+	def draw(self, scr):
+		for ore in self.ores:
+			ore.draw(scr)
+		for text in self.text:
+			text.draw(scr)
+
+	def update(self, ore = None):
+		if ore is None:
+			self.text = []
+			for ore in ORES:
+				idx = ore - ORES[0]
+				self.text.append(MenuText(f'{self.dr.carry[ore]}', 10, posx = self.xy[idx][0], posy = self.xy[idx][1], absolute = True))
+		else:
+			idx = ore - ORES[0]
+			self.text[idx] = MenuText(f'{self.dr.carry[ore]}', 10, posx = self.xy[idx][0], posy = self.xy[idx][1], absolute = True)
+
+	def empty(self):
+		self.ores = self.text = None
+
+
+class Sprite_Bar(Sprite):
+	def __init__(self, name, vals, color, top, w = SCR_W // 4, h = 36, border = 4, padding = 24, border_color = (0, 0, 0), bg_color = (63, 63, 63), t_color = (255, 255, 255)):
+		font = pg.font.Font(PIXEL_FONT_URL, 24)
+		self.image = pg.Surface((w + border * 2, h + border * 2))
+		self.rect = self.image.get_rect()
+		self.image.fill(border_color)
+		len = w * vals[0] // vals[1]
+		pg.draw.rect(self.image, bg_color, (border, border, w, h))
+		pg.draw.rect(self.image, color, (border, border, len, h))
+		text = font.render(f'{name}: {vals[0]} | {vals[1]}', True, t_color)
+		rect = text.get_rect()
+		rect.center = self.rect.center
+		rect.left = self.rect.left + border + 14
+		self.image.blit(text, rect)
+		self.rect = self.image.get_rect()
+		self.rect.topright = (SCR_W - padding, top + padding)
+
+
+class Bar_Sp:
+	def __init__(self, dr):
+		self.dr = dr
+		self.oldp, self.oldp_max = self.dr.p, self.dr.p_max
+		self.oldh, self.oldh_max = self.dr.h, self.dr.h_max
+		self.oldg, self.oldg_max = self.dr.g, self.dr.g_max
+		self.oldo, self.oldo_max = self.dr.o, self.dr.o_max
+		self.oldm = self.dr.money
+		self.bars = []
+		self.bars.append(Sprite_Bar('燃油量', (self.dr.p, self.dr.p_max), P_COLOR, 0))
+		self.bars.append(Sprite_Bar('血量  ', (self.dr.h, self.dr.h_max), H_COLOR, self.bars[-1].rect.bottom))
+		self.bars.append(Sprite_Bar('燃气量', (self.dr.g, self.dr.g_max), G_COLOR, self.bars[-1].rect.bottom))
+		self.bars.append(Sprite_Bar('矿物量', (self.dr.o, self.dr.o_max), O_COLOR, self.bars[-1].rect.bottom))
+		self.bars.append(MenuText(f'金钱: {self.dr.money}', 24, posy = 0.05))
+
+	def draw(self, scr):
+		for bar in self.bars:
+			bar.draw(scr)
+
+	def update(self):
+		if self.oldp != self.dr.p or self.oldp_max != self.dr.p_max:
+			self.bars[0] = Sprite_Bar('燃油量', (self.dr.p, self.dr.p_max), P_COLOR, 0)
+		if self.oldh != self.dr.h or self.oldh_max != self.dr.h_max:
+			self.bars[1] = Sprite_Bar('血量  ', (self.dr.h, self.dr.h_max), H_COLOR, self.bars[0].rect.bottom)
+		if self.oldg != self.dr.g or self.oldg_max != self.dr.g_max:
+			self.bars[2] = Sprite_Bar('燃气量', (self.dr.g, self.dr.g_max), G_COLOR, self.bars[1].rect.bottom)
+		if self.oldo != self.dr.o or self.oldo_max != self.dr.o_max:
+			self.bars[3] = Sprite_Bar('矿物量', (self.dr.o, self.dr.o_max), O_COLOR, self.bars[2].rect.bottom)
+		if self.oldm != self.dr.money:
+			self.bars[4] = MenuText(f'金钱: {self.dr.money}', 24, posy = 0.05)
+		self.oldp, self.oldp_max = self.dr.p, self.dr.p_max
+		self.oldh, self.oldh_max = self.dr.h, self.dr.h_max
+		self.oldg, self.oldg_max = self.dr.g, self.dr.g_max
+		self.oldo, self.oldo_max = self.dr.o, self.dr.o_max
+
+
 class Page_Game(Page):
 	def __init__(self, log_id = 0):
 		super().__init__()
@@ -554,8 +647,12 @@ class Page_Game(Page):
 		self.bg = Background_Sp(self.mp, self.dr)
 		self.map = Map_Sp(self.mp, self.dr)
 		self.drill = Drill_Sp(self.mp, self.dr)
+		self.show_bar = 1
+		self.bar = Bar_Sp(self.dr)
 		self.show_npc = 1
 		self.npc = NPC_Sp(self.mp)
+		self.show_ore = 1
+		self.ore = Ore_Sp(self.mp, self.dr)
 		self.frame_cnt = self.show_info = self.pre_fps = 0
 		self.pre_time = datetime.now()
 		self.info = Game_Info(self)
@@ -571,6 +668,17 @@ class Page_Game(Page):
 			self.show_info %= 6
 		if ctrl.get_key(CTRL_INTER[1]):
 			self.show_npc ^= 1
+		if ctrl.get_key(CTRL_INTER[2]):
+			self.show_ore ^= 1
+		if ctrl.get_key(CTRL_I):
+			glb.pages.append(Page_Info())
+			return PAGE_NONE
+		if ctrl.get_key(CTRL_J):
+			glb.pages.append(Page_Achieve())
+			return PAGE_NONE
+		if ctrl.get_key(CTRL_K):
+			glb.pages.append(Page_Key())
+			return PAGE_NONE
 		if not self.drill.is_moving:
 			key = ctrl.get_press(CTRL_L, CTRL_R, CTRL_D, CTRL_U)
 			if key:
@@ -594,31 +702,65 @@ class Page_Game(Page):
 		self.bg.update()
 		if self.show_info:
 			self.info.update(self.show_info)
+		if self.show_bar:
+			self.bar.update()
 		return PAGE_NONE
 
 	def try_fillp(self):
-		pre = self.dr.p
-		self.dr.p = min(self.dr.p_max, self.dr.p + self.dr.money * P_COST[1] // P_COST[0])
-		self.dr.money -= (self.dr.p - pre) * P_COST[0] // P_COST[1]
+		pre, nxt = self.dr.p, min(self.dr.p_max, self.dr.p + self.dr.money * P_COST[1] // P_COST[0])
+		if pre == nxt and nxt != self.dr.p_max:
+			glb.show_WN('没钱加油')
+			return
+		elif pre == nxt:
+			glb.show_WN('无需加油', color = DARK_GREEN)
+			return
+		cst = (nxt - pre) * P_COST[0] // P_COST[1]
+		status = glb.get_YN(f'请确认是否加油：燃油量从 {pre} 加到 {nxt} 花费 {cst}')
+		if not status:
+			return
+		self.dr.p = nxt
+		self.dr.money -= cst
 
 	def try_fillg(self):
-		pre = self.dr.g
-		self.dr.g = min(self.dr.g_max, self.dr.g + self.dr.money * G_COST[1] // G_COST[0])
-		self.dr.money -= (self.dr.g - pre) * G_COST[0] // G_COST[1]
+		pre, nxt = self.dr.g, min(self.dr.g_max, self.dr.g + self.dr.money * G_COST[1] // G_COST[0])
+		if pre == nxt and nxt != self.dr.g_max:
+			glb.show_WN('没钱加气')
+			return
+		elif pre == nxt:
+			glb.show_WN('无需加气', color = DARK_GREEN)
+			return
+		cst = (nxt - pre) * G_COST[0] // G_COST[1]
+		status = glb.get_YN(f'请确认是否加气：氮气量从 {pre} 加到 {nxt} 花费 {cst}')
+		if not status:
+			return
+		self.dr.g = nxt
+		self.dr.money -= cst
 
 	def try_repair(self):
-		pre = self.dr.h
-		self.dr.h = min(self.dr.h_max, self.dr.h + self.dr.money * R_COST[1] // R_COST[0])
-		self.dr.money -= (self.dr.h - pre) * R_COST[0] // R_COST[1]
+		pre, nxt = self.dr.h, min(self.dr.h_max, self.dr.h + self.dr.money * R_COST[1] // R_COST[0])
+		if pre == nxt and nxt != self.dr.h_max:
+			glb.show_WN('没钱维修')
+			return
+		elif pre == nxt:
+			glb.show_WN('无需维修', color = DARK_GREEN)
+			return
+		cst = (nxt - pre) * R_COST[0] // R_COST[1]
+		status = glb.get_YN(f'请确认是否维修：血量从 {pre} 维修到 {nxt} 花费 {cst}')
+		if not status:
+			return
+		self.dr.h = nxt
+		self.dr.money -= cst
 
 	def try_sell(self):
 		money = 0
 		for ore in self.dr.carry:
 			money += get_val(ore) * self.dr.carry[ore]
 			self.dr.carry[ore] = 0
+		glb.show_WN(f'售出所有矿物，获得金钱 {money}')
 		self.dr.money += money
 		self.dr.o = 0
 		glb.achieve.vals['tot-money'] += money
+		self.ore.update()
 
 	def try_move(self, d, speedup):
 		nr, nc = self.dr.r + D_XY[d][0], self.dr.c + D_XY[d][1]
@@ -708,6 +850,7 @@ class Page_Game(Page):
 	def cover_ore(self, idx):
 		glb.achieve.vals[idx] += 1
 		glb.achieve.vals['tot-ore'] += 1
+		self.ore.update(idx)
 		if self.dr.o < self.dr.o_max:
 			self.dr.o += 1
 			self.dr.carry[idx] += 1
@@ -743,6 +886,10 @@ class Page_Game(Page):
 			self.info.draw(scr)
 		if self.show_npc:
 			self.npc.draw(scr)
+		if self.show_ore:
+			self.ore.draw(scr)
+		if self.show_bar:
+			self.bar.draw(scr)
 
 
 TEXT_COLOR = (220, 220, 220)

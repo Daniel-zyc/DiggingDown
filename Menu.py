@@ -46,10 +46,12 @@ class Background:
 
 
 class MenuText(Sprite):
-    def __init__(self, text, size, posx = 0.5, posy = 0.5, color = (255, 255, 255), font = PIXEL_FONT_URL, center = True):
+    def __init__(self, text, size, posx = 0.5, posy = 0.5, color = (255, 255, 255), font = PIXEL_FONT_URL, center = True, absolute = False):
         super().__init__()
         size = int(size * SCR_H // 600)
         position = (int(SCR_W * posx), int(SCR_H * posy))
+        if absolute:
+            position = (posx, posy)
         font = pg.font.Font(font, size)
         self.image = font.render(text, True, color)
         self.rect = self.image.get_rect()
@@ -64,12 +66,12 @@ class MenuText(Sprite):
 
 
 class Block(Sprite):
-    def __init__(self, w: int = SCR_W, h: int = SCR_H // 5):
+    def __init__(self, w: int = SCR_W, h: int = SCR_H // 5, color = DARK_RED):
         super().__init__()
         self.w = w
         self.h = h
         self.image = pg.Surface((int(w), int(h)))
-        self.image.fill((255, 63, 63))
+        self.image.fill(color)
 
         self.rect = self.image.get_rect()
         self.rect.center = (SCR_W // 2, SCR_H // 2)
