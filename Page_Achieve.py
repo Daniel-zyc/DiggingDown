@@ -38,16 +38,43 @@ class Page_Achieve(Page):
 		self.text.empty()
 		if self.idx > 0:
 			self.prev = MenuText('上一页 [A]', 36, posx = 0.2, posy = 0.9)
-		if self.idx < 5:
+		if self.idx < 4:
 			self.next = MenuText('下一页 [D]', 36, posx = 0.8, posy = 0.9)
 		if self.idx == 0:
-			self.text.add(MenuText(f'总共获得的金钱：{self.data["tot-money"]}', 30, posy = 0.25))
-			self.text.add(MenuText(f'总共挖掘的土块：{self.data["tot-dirt"]}', 30, posy = 0.35))
-			self.text.add(MenuText(f'总共挖掘的矿物：{self.data["tot-ore"]}', 30, posy = 0.45))
-			self.text.add(MenuText(f'总共挖掘的宝箱：{self.data["tot-chest"]}', 30, posy = 0.55))
-			self.text.add(MenuText(f'总共解救的 NPC：{self.data["tot-npc"]}', 30, posy = 0.65))
-			self.text.add(MenuText(f'总共行走的距离：{self.data["tot-move"]}', 30, posy = 0.75))
-		pass
+			self.text.add(MenuText(f'获得的金钱：{self.data["tot-money"]}', 30, posy = 0.25))
+			self.text.add(MenuText(f'挖掘的土块：{self.data["tot-dirt"]}', 30, posy = 0.35))
+			self.text.add(MenuText(f'挖掘的矿物：{self.data["tot-ore"]}', 30, posy = 0.45))
+			self.text.add(MenuText(f'挖掘的宝箱：{self.data["tot-chest"]}', 30, posy = 0.55))
+			self.text.add(MenuText(f'解救的 NPC：{self.data["tot-npc"]}', 30, posy = 0.65))
+			self.text.add(MenuText(f'行走的距离：{self.data["tot-move"]}', 30, posy = 0.75))
+		elif self.idx == 1:
+			for i in range(0, DIRT_TOT):
+				tmp = DIRTS[i]
+				self.text.add(MenuText(f'挖掘的 {get_name(tmp)}：{self.data[tmp]}', 28, posy = 0.25 + i * 0.09))
+		elif self.idx == 2:
+			hf = ORE_TOT // 2 + 1
+			for i in range(0, hf):
+				tmp = ORES[i]
+				self.text.add(MenuText(f'挖掘的 {get_name(tmp)}：{self.data[tmp]}', 20, posx = 0.25, posy = 0.22 + i * 0.058))
+			for i in range(hf, ORE_TOT):
+				tmp = ORES[i]
+				self.text.add(MenuText(f'挖掘的 {get_name(tmp)}：{self.data[tmp]}', 20, posx = 0.75, posy = 0.22 + (i - hf) * 0.058))
+		elif self.idx == 3:
+			hf = CHEST_TOT // 2 + 1
+			for i in range(0, hf):
+				tmp = CHESTS[i]
+				self.text.add(MenuText(f'获得的 {get_name(tmp)}：{self.data[tmp]}', 24, posx = 0.25, posy = 0.22 + i * 0.07))
+			for i in range(hf, CHEST_TOT):
+				tmp = CHESTS[i]
+				self.text.add(MenuText(f'获得的 {get_name(tmp)}：{self.data[tmp]}', 24, posx = 0.75, posy = 0.22 + (i - hf) * 0.07))
+		elif self.idx == 4:
+			hf = NPC_TOT // 2 + 1
+			for i in range(0, hf):
+				tmp = NPCS[i]
+				self.text.add(MenuText(f'解救的 {get_name(tmp)}：{self.data[tmp]}', 20, posx = 0.25, posy = 0.22 + i * 0.053))
+			for i in range(hf, NPC_TOT):
+				tmp = NPCS[i]
+				self.text.add(MenuText(f'解救的 {get_name(tmp)}：{self.data[tmp]}', 20, posx = 0.75, posy = 0.22 + (i - hf) * 0.053))
 
 	def draw(self, scr):
 		for obj in self.list:
