@@ -569,17 +569,20 @@ class Ore_Sp:
 			self.text = []
 			for ore in ORES:
 				idx = ore - ORES[0]
-				self.text.append(MenuText(f'{self.dr.carry[ore]}', 10, posx = self.xy[idx][0], posy = self.xy[idx][1], absolute = True))
+				self.text.append(MenuText(f'{self.dr.carry[ore]}', 10, posx = self.xy[idx][0], posy = self.xy[idx][1],
+				                          absolute = True))
 		else:
 			idx = ore - ORES[0]
-			self.text[idx] = MenuText(f'{self.dr.carry[ore]}', 10, posx = self.xy[idx][0], posy = self.xy[idx][1], absolute = True)
+			self.text[idx] = MenuText(f'{self.dr.carry[ore]}', 10, posx = self.xy[idx][0], posy = self.xy[idx][1],
+			                          absolute = True)
 
 	def empty(self):
 		self.ores = self.text = None
 
 
 class Sprite_Bar(Sprite):
-	def __init__(self, name, vals, color, top, w = SCR_W // 4, h = 36, border = 4, padding = 24, border_color = (0, 0, 0), bg_color = (63, 63, 63), t_color = (255, 255, 255)):
+	def __init__(self, name, vals, color, top, w = SCR_W // 4, h = 36, border = 4, padding = 24,
+	             border_color = (0, 0, 0), bg_color = (63, 63, 63), t_color = (255, 255, 255)):
 		font = pg.font.Font(PIXEL_FONT_URL, 24)
 		self.image = pg.Surface((w + border * 2, h + border * 2))
 		self.rect = self.image.get_rect()
@@ -657,12 +660,12 @@ class Page_Game(Page):
 		self.pre_time = datetime.now()
 		self.info = Game_Info(self)
 		self.speed, self.pixel, self.nr, self.nc, self.mv_timer = SPEED_LEVEL[0][0], 0, 0, 0, SPEED_LEVEL[0][0][1]
-		self.is_finish=0
-
+		self.is_finish = 0
 
 	def refresh(self, ctrl: Control):
 		self.update_fps()
 		if ctrl.get_key(CTRL_ESC):
+			dig_sound.stop()
 			glb.pages.append(Page_Pause(self.mp, self.dr))
 			return PAGE_NONE
 		if ctrl.get_key(CTRL_TAB):
@@ -722,6 +725,7 @@ class Page_Game(Page):
 			return
 		self.dr.p = nxt
 		self.dr.money -= cst
+		fill_sound.play()
 
 	def try_fillg(self):
 		pre, nxt = self.dr.g, min(self.dr.g_max, self.dr.g + self.dr.money * G_COST[1] // G_COST[0])
@@ -737,6 +741,7 @@ class Page_Game(Page):
 			return
 		self.dr.g = nxt
 		self.dr.money -= cst
+		fill_sound.play()
 
 	def try_repair(self):
 		pre, nxt = self.dr.h, min(self.dr.h_max, self.dr.h + self.dr.money * R_COST[1] // R_COST[0])
@@ -752,16 +757,21 @@ class Page_Game(Page):
 			return
 		self.dr.h = nxt
 		self.dr.money -= cst
+		fill_sound.play()
 
 	def try_sell(self):
+		if self.dr.o == 0:
+			glb.show_WN('没有携带任何矿物')
+			return
 		money = 0
 		for ore in self.dr.carry:
 			money += get_val(ore) * self.dr.carry[ore]
 			self.dr.carry[ore] = 0
-		glb.show_WN(f'售出所有矿物，获得金钱 {money}')
+		glb.show_WN(f'售出所有矿物，获得金钱 {money}', color = LIGHT_GREEN)
 		self.dr.money += money
 		self.dr.o = 0
 		glb.achieve.vals['tot-money'] += money
+		sell_sound.play()
 		self.ore.update()
 
 	def try_move(self, d, speedup):
@@ -770,7 +780,8 @@ class Page_Game(Page):
 			return
 		if self.dr.r != 0 and nr != 0 and self.dr.p <= 0:
 			return
-		if (is_ore(self.mp.mp[nr][nc]) or is_dirt(self.mp.mp[nr][nc]) or is_chest(self.mp.mp[nr][nc])) and self.dr.h <= 0:
+		if (is_ore(self.mp.mp[nr][nc]) or is_dirt(self.mp.mp[nr][nc]) or is_chest(
+				self.mp.mp[nr][nc])) and self.dr.h <= 0:
 			return
 		if self.dr.g <= 0:
 			speedup = 0
@@ -832,7 +843,6 @@ class Page_Game(Page):
 		self.pixel = 0
 		if self.drill.is_drilling == 1:
 			dig_sound.stop()
-			a=1
 		self.drill.is_moving = 0
 		self.drill.is_drilling = 0
 		r, c = self.nr, self.nc
@@ -852,6 +862,7 @@ class Page_Game(Page):
 		glb.achieve.vals['tot-dirt'] += 1
 		self.dr.h -= get_damage(idx)
 		self.dr.h = max(self.dr.h, 0)
+		dirt_break_sound.play()
 
 	def cover_ore(self, idx):
 		glb.achieve.vals[idx] += 1
@@ -862,6 +873,7 @@ class Page_Game(Page):
 			self.dr.carry[idx] += 1
 		self.dr.h -= get_damage(idx)
 		self.dr.h = max(self.dr.h, 0)
+		ore_break_sound.play()
 
 	def cover_chest(self, idx):
 		glb.achieve.vals[idx] += 1
@@ -869,14 +881,17 @@ class Page_Game(Page):
 		self.dr.money += get_val(idx)
 		self.dr.h -= get_damage(idx)
 		self.dr.h = max(self.dr.h, 0)
+		unlock_chest_sound.play()
 
 	def cover_npc(self, idx):
 		glb.achieve.vals[idx] += 1
 		glb.achieve.vals['tot-npc'] += 1
 		self.mp.npc[idx] = 1
-		self.mp.saved_npc+=1
-		if self.mp.saved_npc==NPC_TOT:
-			 
+		self.mp.saved_npc += 1
+		save_npc_sound[random.randint(0, len(save_npc_sound) - 1)].play()
+		glb.show_WN(f'恭喜你解救了 {get_name(idx)}', color = DARK_GREEN)
+		if self.mp.saved_npc == NPC_TOT:
+			self.is_finish = 1
 
 	def update_fps(self):
 		self.frame_cnt += 1
@@ -888,7 +903,7 @@ class Page_Game(Page):
 			self.frame_cnt = 0
 
 	def draw(self, scr):
-		if self.mp.in_cave(self.dr.r,self.dr.c):
+		if self.mp.in_cave(self.dr.r, self.dr.c):
 			play_bgm("under_sound")
 		else:
 			play_bgm("land_sound")
@@ -964,14 +979,18 @@ class Game_Info:
 			self.info.add_row(f'FPS: {int(self.page.pre_fps)}')
 			return
 		if level >= 2:
-			self.info.add_row(f'FPS: {int(self.page.pre_fps)}, 屏幕大小: {SCR_N}行, {SCR_M}列, 地图大小:{self.mp.n}行, {self.mp.m}列')
+			self.info.add_row(
+				f'FPS: {int(self.page.pre_fps)}, 屏幕大小: {SCR_N}行, {SCR_M}列, 地图大小:{self.mp.n}行, {self.mp.m}列')
 		if level >= 3:
 			self.info.add_row(f'共有 {self.bg.tree_num} 棵树, {self.bg.cloud_num} 朵云, {self.bg.bird_num}只鸟')
 		if level >= 2:
-			self.info.add_row(f'钻机位置: {self.dr.r}行, {self.dr.c}列, 屏幕中心位置: {self.mp.r}行, {self.mp.c}列, 钻机所处格子ID: {self.mp.mp[self.dr.r][self.dr.c]}')
+			self.info.add_row(
+				f'钻机位置: {self.dr.r}行, {self.dr.c}列, 屏幕中心位置: {self.mp.r}行, {self.mp.c}列, 钻机所处格子ID: {self.mp.mp[self.dr.r][self.dr.c]}')
 		if level >= 3:
-			self.info.add_row(f'钻头等级：{self.dr.rgd_l}, 装甲等级：{self.dr.h_l}, 燃油箱等级：{self.dr.p_l}, 氮气箱等级：{self.dr.g_l}，引擎等级：{self.dr.eng_l}')
-			self.info.add_row(f'金钱：{self.dr.money}, 燃油量：{self.dr.p}, 氮气量：{self.dr.g}，矿石容量：{self.dr.o}，血量：{self.dr.h}')
+			self.info.add_row(
+				f'钻头等级：{self.dr.rgd_l}, 装甲等级：{self.dr.h_l}, 燃油箱等级：{self.dr.p_l}, 氮气箱等级：{self.dr.g_l}，引擎等级：{self.dr.eng_l}')
+			self.info.add_row(
+				f'金钱：{self.dr.money}, 燃油量：{self.dr.p}, 氮气量：{self.dr.g}，矿石容量：{self.dr.o}，血量：{self.dr.h}')
 			s = '携带矿物：'
 			for ore in ORES:
 				s += f'{get_name(ore)}: {self.dr.carry[ore]} '
@@ -1055,7 +1074,6 @@ class Game_Info:
 				s = f'  存档 {i}:' + glb.log.logs_info[i] + f'  存档 {i + 1}:' + glb.log.logs_info[i + 1]
 				self.info.add_row(s)
 
-
 	def draw(self, scr):
 		self.info.draw(scr)
 
@@ -1082,6 +1100,3 @@ def init_game(log_id = 0):
 		'''
 		glb.pages.append(init_Page_Game())
 		'''
-
-
-

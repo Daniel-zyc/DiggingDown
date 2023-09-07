@@ -16,9 +16,11 @@ if __name__ == "__main__":
 			elif event.type == pg.WINDOWFOCUSLOST:
 				glb.have_focus = 0
 				glb.ctrl.clear()
-			elif event.type == pg.WINDOWFOCUSGAINED:
+				pause_all_sound()
+			elif event.type == pg.WINDOWFOCUSGAINED and not glb.have_focus:
 				glb.have_focus = 1
 				glb.ctrl.clear()
+				resume_all_sound()
 			elif event.type == pg.KEYDOWN:
 				glb.key_time += 1
 				glb.ctrl.add_key(event.key, glb.key_time)

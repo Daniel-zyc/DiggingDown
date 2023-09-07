@@ -9,7 +9,7 @@ logging.basicConfig(format = "%(levelname)s: %(message)s", level = logging.DEBUG
 
 # 控制按键映射（添加控制修改三个地方，控制映射值，控制列表，按键到控制的映射）
 # 空控制（用于表示没有触发任何控制的情况）
-CTRL_NONE = 0    # 不可变
+CTRL_NONE = 0  # 不可变
 # 退出（返回，取消）、确认（交互）、加速、详细信息
 CTRL_ESC, CTRL_ENTER, CTRL_SH, CTRL_TAB = 1000, -1000, -20, -10
 # 上、下、左、右    不可变
@@ -43,20 +43,19 @@ KEY_TO_CTRL = {
 	pg.K_i: CTRL_I,
 	pg.K_j: CTRL_J,
 	pg.K_k: CTRL_K,
-	pg.K_1: CTRL_OPT[1],  pg.K_KP1: CTRL_OPT[1],  pg.K_KP_1: CTRL_OPT[1],
-	pg.K_2: CTRL_OPT[2],  pg.K_KP2: CTRL_OPT[2],  pg.K_KP_2: CTRL_OPT[2],
-	pg.K_3: CTRL_OPT[3],  pg.K_KP3: CTRL_OPT[3],  pg.K_KP_3: CTRL_OPT[3],
-	pg.K_4: CTRL_OPT[4],  pg.K_KP4: CTRL_OPT[4],  pg.K_KP_4: CTRL_OPT[4],
-	pg.K_5: CTRL_OPT[5],  pg.K_KP5: CTRL_OPT[5],  pg.K_KP_5: CTRL_OPT[5],
-	pg.K_6: CTRL_OPT[6],  pg.K_KP6: CTRL_OPT[6],  pg.K_KP_6: CTRL_OPT[6],
-	pg.K_7: CTRL_OPT[7],  pg.K_KP7: CTRL_OPT[7],  pg.K_KP_7: CTRL_OPT[7],
-	pg.K_8: CTRL_OPT[8],  pg.K_KP8: CTRL_OPT[8],  pg.K_KP_8: CTRL_OPT[8],
-	pg.K_9: CTRL_OPT[9],  pg.K_KP9: CTRL_OPT[9],  pg.K_KP_9: CTRL_OPT[9],
+	pg.K_1: CTRL_OPT[1], pg.K_KP1: CTRL_OPT[1], pg.K_KP_1: CTRL_OPT[1],
+	pg.K_2: CTRL_OPT[2], pg.K_KP2: CTRL_OPT[2], pg.K_KP_2: CTRL_OPT[2],
+	pg.K_3: CTRL_OPT[3], pg.K_KP3: CTRL_OPT[3], pg.K_KP_3: CTRL_OPT[3],
+	pg.K_4: CTRL_OPT[4], pg.K_KP4: CTRL_OPT[4], pg.K_KP_4: CTRL_OPT[4],
+	pg.K_5: CTRL_OPT[5], pg.K_KP5: CTRL_OPT[5], pg.K_KP_5: CTRL_OPT[5],
+	pg.K_6: CTRL_OPT[6], pg.K_KP6: CTRL_OPT[6], pg.K_KP_6: CTRL_OPT[6],
+	pg.K_7: CTRL_OPT[7], pg.K_KP7: CTRL_OPT[7], pg.K_KP_7: CTRL_OPT[7],
+	pg.K_8: CTRL_OPT[8], pg.K_KP8: CTRL_OPT[8], pg.K_KP_8: CTRL_OPT[8],
+	pg.K_9: CTRL_OPT[9], pg.K_KP9: CTRL_OPT[9], pg.K_KP_9: CTRL_OPT[9],
 	pg.K_0: CTRL_OPT[10], pg.K_KP0: CTRL_OPT[10], pg.K_KP_0: CTRL_OPT[10],
 	pg.K_e: CTRL_INTER[1],
 	pg.K_f: CTRL_INTER[2]
 }
-
 
 # 方向映射
 # 无方向、右、下、左、上    不可变
@@ -66,10 +65,8 @@ D_XY = {D_N: [0, 0], D_R: [0, 1], D_D: [1, 0], D_L: [0, -1], D_U: [-1, 0]}
 # 由地图坐标系转换为钻机坐标系的映射，同时也是钻机坐标系转换为地图坐标系的映射
 D_MP = {D_N: D_N, D_U: D_R, D_D: D_L, D_L: D_D, D_R: D_U}
 
-
 # 物块图片大小    不可变
 BLOCK_SZ = 24
-
 
 # 屏幕信息
 # 屏幕中每行、每列的物块数    根据用户屏幕大小自适应
@@ -117,7 +114,7 @@ NPC_TOT = len(NPCS)
 FOG = 90
 
 # 矿物参数常量
-BLK_DENS_SIZE = 50000    # 密度计算公式 num//DENSITY_SIZE
+BLK_DENS_SIZE = 50000  # 密度计算公式 num//DENSITY_SIZE
 FOG_RAD = 5
 BLK_DATA = {
 	DIRTS[0]: {'name': '土块', 'rgd': 1, 'val': 0},
@@ -285,20 +282,20 @@ BODY, HEAD, SFLAME, LFLAME = 201, 202, 203, 204
 # 钻机参数常量
 DRILL_LEVEL_MAX = 6
 DRILL_DATA = {
-	'rgd':   [3, 6, 9, 12, 15, 18, 21],
+	'rgd': [3, 6, 9, 12, 15, 18, 21],
 	'h_max': [200, 400, 700, 1000, 1500, 3000, 5000],
 	'g_max': [100, 150, 250, 400, 700, 1000, 1500],
 	'p_max': [10000, 15000, 25000, 40000, 70000, 100000, 150000],
 	'o_max': [50, 75, 110, 150, 200, 250, 300],
-	'eng':   [0, 1, 2, 3, 4, 5, 6],
+	'eng': [0, 1, 2, 3, 4, 5, 6],
 }
 DRILL_COST = {
-	'rgd':   [100, 200, 300, 400, 500, 600],
+	'rgd': [100, 200, 300, 400, 500, 600],
 	'h_max': [102, 200, 300, 400, 500, 600],
 	'g_max': [104, 200, 300, 400, 500, 600],
 	'p_max': [103, 200, 300, 400, 500, 600],
 	'o_max': [105, 200, 300, 400, 500, 600],
-	'eng':   [101, 200, 300, 400, 500, 600],
+	'eng': [101, 200, 300, 400, 500, 600],
 }
 DRILL_LEVEL_COLOR = [
 	(255, 221, 113),
@@ -314,15 +311,15 @@ FLAME_SHAKE = [1, 1, 1, 0, -1, -1, -1, 0]
 
 # 钻机速度 [分子, 分母] 像素每帧
 SPEED_LEVEL = [
-	[[0, -1], [1, 4], [1, 3], [1, 2], [1, 1], [2, 1], [3, 1], [4, 1], [6,  1], [12, 1]],
+	[[0, -1], [1, 4], [1, 3], [1, 2], [1, 1], [2, 1], [3, 1], [4, 1], [6, 1], [12, 1]],
 	[[0, -1], [1, 2], [2, 3], [1, 1], [2, 1], [4, 1], [6, 1], [8, 1], [12, 1], [24, 1]]
 ]
 SPEED_LEVEL_MAX = len(SPEED_LEVEL[0]) - 1
 
 # 钻机图片地址链接
 DR_IMG_URL = {
-	BODY:   './assets/img/body/{}_{}.png',
-	HEAD:   './assets/img/head/{}_{}.png',
+	BODY: './assets/img/body/{}_{}.png',
+	HEAD: './assets/img/head/{}_{}.png',
 	SFLAME: './assets/img/sflame/{}_{}.png',
 	LFLAME: './assets/img/lflame/{}_{}.png',
 }
@@ -333,20 +330,18 @@ P_READ, P_SAVE, P_YN, P_PSHOP, P_OVER = 306, 307, 308, 309, 310
 
 PAGE_URL = {
 	P_ACHIEVE: './assets/img/page/achieve.png',
-	P_INFO:    './assets/img/page/info.png',
-	P_KEYS:    './assets/img/page/keys.png',
-	P_MENU:    './assets/img/page/menu.png',
-	P_PAUSE:   './assets/img/page/pause.png',
-	P_READ:    './assets/img/page/read.png',
-	P_SAVE:    './assets/img/page/save.png',
-	P_YN:      './assets/img/page/YN.png',
-	P_PSHOP:    './assets/img/page/shop.png',
-	P_OVER:    './assets/img/page/over.png',
+	P_INFO: './assets/img/page/info.png',
+	P_KEYS: './assets/img/page/keys.png',
+	P_MENU: './assets/img/page/menu.png',
+	P_PAUSE: './assets/img/page/pause.png',
+	P_READ: './assets/img/page/read.png',
+	P_SAVE: './assets/img/page/save.png',
+	P_YN: './assets/img/page/YN.png',
+	P_PSHOP: './assets/img/page/shop.png',
+	P_OVER: './assets/img/page/over.png',
 }
 
-
 PAGE_NONE, PAGE_EXIT = 0, -1
-
 
 LOG_NUM_MAX = 10
 LOG_ROOT_URL = './.log'
@@ -406,21 +401,41 @@ for i in range(0, NPC_TOT):
 	image_buf[tmp] = pg.image.load(NPC_IMG_URL.format(i))
 image_buf[FOG] = pg.image.load(FOG_IMG_URL)
 
-press_sound=pg.mixer.Sound("./assets/audio/press.wav")
-menu_sound=pg.mixer.Sound("./assets/audio/menu.wav")
-land_sound=pg.mixer.Sound("./assets/audio/land.wav")
-under_sound=pg.mixer.Sound("./assets/audio/under.wav")
-dig_sound=pg.mixer.Sound("./assets/audio/dig.wav")
-option_sound=pg.mixer.Sound("./assets/audio/option.wav")
-option_sound.set_volume(1)
-audio_map={
-	"press_sound": press_sound,	
-	"menu_sound":menu_sound,
-	"land_sound":land_sound,
-	"under_sound":under_sound,
-	"dig_sound":dig_sound,
-	"option_sound":option_sound
+press_sound = pg.mixer.Sound("./assets/audio/press.wav")
+menu_sound = pg.mixer.Sound("./assets/audio/menu.wav")
+menu_sound.set_volume(0.4)
+land_sound = pg.mixer.Sound("./assets/audio/land.wav")
+land_sound.set_volume(0.4)
+under_sound = pg.mixer.Sound("./assets/audio/under.wav")
+under_sound.set_volume(0.4)
+dig_sound = pg.mixer.Sound("./assets/audio/dig.wav")
+option_sound = pg.mixer.Sound("./assets/audio/option.wav")
+drill_rgd_not_enough_sound = pg.mixer.Sound('./assets/audio/low_rgd.wav')
+upgrade_sound = pg.mixer.Sound('./assets/audio/upgrade.wav')
+dirt_break_sound = pg.mixer.Sound('./assets/audio/dirt_break.wav')
+dirt_break_sound.set_volume(0.4)
+unlock_chest_sound = pg.mixer.Sound('./assets/audio/unlock_chest.wav')
+ore_break_sound = pg.mixer.Sound('./assets/audio/ore_break.wav')
+fill_sound = pg.mixer.Sound('./assets/audio/fill.wav')
+sell_sound = pg.mixer.Sound('./assets/audio/sell.wav')
+save_npc_sound = [
+	pg.mixer.Sound('./assets/audio/save_npc0.wav'),
+	pg.mixer.Sound('./assets/audio/save_npc1.wav'),
+	pg.mixer.Sound('./assets/audio/save_npc2.wav'),
+	pg.mixer.Sound('./assets/audio/save_npc3.wav'),
+	pg.mixer.Sound('./assets/audio/save_npc4.wav'),
+	pg.mixer.Sound('./assets/audio/save_npc5.wav'),
+]
+audio_map = {
+	"press_sound": press_sound,
+	"menu_sound": menu_sound,
+	"land_sound": land_sound,
+	"under_sound": under_sound,
+	"dig_sound": dig_sound,
+	"option_sound": option_sound,
+	'drill_rgd_not_enough_sound': drill_rgd_not_enough_sound
 }
+
 
 def swap(a, b):
 	tmp = a
@@ -526,19 +541,30 @@ def get_speed_level(blk_tp, dr_rgd_l, dr_eng_l, speedup):
 		blk_rgd = BLK_DATA[blk_tp]['rgd']
 		tmp = min(dr_rgd - blk_rgd, tmp)
 	if tmp < 0:
+		drill_rgd_not_enough_sound.play()
 		return SPEED_LEVEL[speedup][0]
 	tmp += dr_eng + 1
 	tmp = min(tmp, SPEED_LEVEL_MAX)
 	return SPEED_LEVEL[speedup][tmp]
 
 
-cur_bgm="menu_sound"
+cur_bgm = "menu_sound"
 audio_map[cur_bgm].play(-1)
+
+
 def play_bgm(bgm):
-	global	cur_bgm
-	if cur_bgm==bgm:
+	global cur_bgm
+	if cur_bgm == bgm:
 		pass
 	else:
 		audio_map[cur_bgm].stop()
-		cur_bgm=bgm
-		audio_map[cur_bgm].play(-1) 
+		cur_bgm = bgm
+		audio_map[cur_bgm].play(-1)
+
+
+def pause_all_sound():
+	pg.mixer.pause()
+
+
+def resume_all_sound():
+	pg.mixer.unpause()

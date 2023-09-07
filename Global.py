@@ -30,9 +30,11 @@ def get_event():
 		elif event.type == pg.WINDOWFOCUSLOST:
 			have_focus = 0
 			ctrl.clear()
-		elif event.type == pg.WINDOWFOCUSGAINED:
+			pause_all_sound()
+		elif event.type == pg.WINDOWFOCUSGAINED and not have_focus:
 			have_focus = 1
 			ctrl.clear()
+			resume_all_sound()
 		elif event.type == pg.MOUSEBUTTONDOWN:
 			if event.button == 1:
 				ctrl.mouse_down(event.pos)
@@ -79,6 +81,9 @@ def play_CG():
 		clock.tick(FPS)
 		frame_time += 1
 		get_event()
+		for event in pg.event.get():
+			if event.type == pg.QUIT:
+				soft_quit()
 		if have_focus:
 			status = pages[-1].refresh(ctrl)
 			if status == PAGE_EXIT:

@@ -70,6 +70,7 @@ class Page_DShop(Page):
             cst = DRILL_COST['eng'][lv]
             self.dr.money -= cst
             self.dr.eng_l += 1
+        upgrade_sound.play()
         self.update()
 
     def draw(self, scr):
