@@ -14,6 +14,7 @@ from Page_Key import Page_Key
 from Page_Info import Page_Info
 from Page_Achieve import Page_Achieve
 from Menu import MenuText
+from queue import Queue
 import Global as glb
 import random
 import threading
@@ -250,10 +251,43 @@ class Map_Sp:
 		image_buf[CAVE] = pg.image.load(CAVE_IMG_URL.format(random.randint(0, CAVE_LEN - 1)))
 		self.map = [[None] * (self.mp.m + 1) for i in range(0, self.mp.n + 1)]
 		self.fog = [[None] * (self.mp.m + 1) for i in range(0, self.mp.n + 1)]
+		self.dist = [[INF] * (self.mp.m + 1) for i in range(0, self.mp.n + 1)]
 		self.npc = SpriteGroup()
 		self.old_r, self.old_c = self.mp.r, self.mp.c
 		self.create()
+		self.init_dist()
 		self.erase_fog(self.dr.r, self.dr.c)
+
+	def init_dist(self):
+		Q = Queue()
+		for i in range(1, self.mp.m + 1):
+			Q.put((0, i))
+			self.dist[0][i] = 0
+		while not Q.empty():
+			r, c = Q.get()
+			for dr, dc in [D_XY[D_D], D_XY[D_L], D_XY[D_R], D_XY[D_U]]:
+				nr, nc = r + dr, c + dc
+				if not self.mp.in_dirt(nr, nc) or self.mp.mp[nr][nc] != EMPTY or self.dist[nr][nc] <= self.dist[r][c] + 1:
+					continue
+				self.dist[nr][nc] = self.dist[r][c] + 1
+				Q.put((nr, nc))
+
+	def update_dist(self, r, c):
+		Q = Queue()
+		Q.put((r, c))
+		for dr, dc in [D_XY[D_D], D_XY[D_L], D_XY[D_R], D_XY[D_U]]:
+			nr, nc = r + dr, c + dc
+			if not self.mp.in_map(nr, nc) or self.dist[nr][nc] + 1 > self.dist[r][c]:
+				continue
+			self.dist[r][c] = self.dist[nr][nc] + 1
+		while not Q.empty():
+			r, c = Q.get()
+			for dr, dc in [D_XY[D_D], D_XY[D_L], D_XY[D_R], D_XY[D_U]]:
+				nr, nc = r + dr, c + dc
+				if not self.mp.in_dirt(nr, nc) or self.mp.mp[nr][nc] != EMPTY or self.dist[nr][nc] <= self.dist[r][c] + 1:
+					continue
+				self.dist[nr][nc] = self.dist[r][c] + 1
+				Q.put((nr, nc))
 
 	def add_block(self, i, j):
 		if not self.mp.in_dirt(i, j):
@@ -340,6 +374,7 @@ class Map_Sp:
 			self.map[r][c] = Sprite_Block(CAVE, x, y)
 		if is_NPC(self.mp.mp[r][c]):
 			self.remove_npc(self.mp.mp[r][c])
+		self.update_dist(r, c)
 		self.mp.mp[r][c] = EMPTY
 
 	def update_map(self, r, c):
@@ -366,12 +401,43 @@ class Map_Sp:
 				if not self.mp.in_dirt(i, j) or self.map[i][j] is None:
 					continue
 				self.map[i][j].draw(scr)
+		self.draw_dist(scr)
 		self.npc.draw(scr)
 		for i in range(self.old_r - SCR_CEN_R - PRE_LOAD + 1, self.old_r + SCR_CEN_R + PRE_LOAD):
 			for j in range(self.old_c - SCR_CEN_C - PRE_LOAD + 1, self.old_c + SCR_CEN_C + PRE_LOAD):
 				if not self.mp.in_dirt(i, j) or self.fog[i][j] is None:
 					continue
 				self.fog[i][j].draw(scr)
+
+	def draw_dist(self, scr):
+		Q = Queue()
+		Q.put((self.dr.r, self.dr.c))
+		while not Q.empty():
+			r, c = Q.get()
+			if self.map[r][c] is not None:
+				rect = pg.Rect(0, 0, 4, 4)
+				rect.center = self.map[r][c].rect.center
+				pg.draw.rect(scr, LIGHT_GREEN, rect)
+			for dr, dc in [D_XY[D_D], D_XY[D_L], D_XY[D_R], D_XY[D_U]]:
+				nr, nc = r + dr, c + dc
+				if not self.mp.in_dirt(nr, nc) or not self.in_preload_range(nr, nc, self.old_r, self.old_c) or self.dist[nr][nc] != self.dist[r][c] - 1:
+					continue
+				Q.put((nr, nc))
+				break
+
+	def get_auto_dir(self, r, c):
+		if r == 0:
+			if c < self.mp.reborn_C:
+				return D_R
+			elif c > self.mp.reborn_C:
+				return D_L
+			return D_N
+		for d in [D_D, D_L, D_R, D_U]:
+			dr, dc = D_XY[d]
+			nr, nc = r + dr, c + dc
+			if not self.mp.in_map(nr, nc) or self.dist[nr][nc] != self.dist[r][c] - 1:
+				continue
+			return d
 
 	def empty(self):
 		self.fog.clear()
@@ -661,6 +727,7 @@ class Page_Game(Page):
 		self.info = Game_Info(self)
 		self.speed, self.pixel, self.nr, self.nc, self.mv_timer = SPEED_LEVEL[0][0], 0, 0, 0, SPEED_LEVEL[0][0][1]
 		self.is_finish = 0
+		self.auto_back = 0
 
 	def refresh(self, ctrl: Control):
 		self.update_fps()
@@ -675,6 +742,11 @@ class Page_Game(Page):
 			self.show_npc ^= 1
 		if ctrl.get_key(CTRL_INTER[2]):
 			self.show_ore ^= 1
+		if ctrl.get_key(CTRL_INTER[3]):
+			if self.auto_back:
+				self.auto_back = 0
+			else:
+				self.auto_back = 1
 		if ctrl.get_key(CTRL_I):
 			glb.pages.append(Page_Info())
 			return PAGE_NONE
@@ -688,6 +760,7 @@ class Page_Game(Page):
 			key = ctrl.get_press(CTRL_L, CTRL_R, CTRL_D, CTRL_U)
 			if key:
 				self.try_move(key, ctrl.get_press(CTRL_SH) != CTRL_NONE)
+				self.auto_back = 0
 			key = ctrl.get_key(CTRL_ENTER)
 			if key:
 				if self.mp.in_shop(P_SHOP, self.dr.r, self.dr.c):
@@ -701,6 +774,10 @@ class Page_Game(Page):
 				elif self.mp.in_shop(D_SHOP, self.dr.r, self.dr.c):
 					glb.pages.append(Page_DShop(self.dr, self.drill))
 					return PAGE_NONE
+			if self.auto_back:
+				self.auto_back = self.map.get_auto_dir(self.dr.r, self.dr.c)
+				if self.auto_back:
+					self.try_move(self.auto_back, 0)
 		self.drill.update()
 		if self.drill.is_moving:
 			self.move()

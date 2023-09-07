@@ -27,6 +27,8 @@ class Background_Sp(Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (SCR_CEN_X, SCR_CEN_Y)
 
+    def empty(self):
+        pass
 
 class Background:
     def __init__(self):

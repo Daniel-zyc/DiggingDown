@@ -18,7 +18,7 @@ class Page_Key(Page):
 		spg.add(MenuText('确认 [Enter, Space]', 24, color = LIGHT_GREEN, posx = 0.625, posy = 0.30))
 		spg.add(MenuText('上 [W, ↑]  下 [S, ↓]  左 [A, ←]  右[D, →]', 24, posy = 0.38))
 		spg.add(MenuText('加速 [Left Shift, Right Shift] ', 24, posy = 0.46))
-		spg.add(MenuText('与商店互动（需要在商店前） [Space]', 24, posy = 0.54))
+		spg.add(MenuText('与商店互动 [Space]  自动返回 [C]', 24, posy = 0.54))
 		spg.add(MenuText('开关 NPC 列表 [E]  开关携带矿物列表 [F]', 24, posy = 0.62))
 		spg.add(MenuText('查看游戏档案 [R]  查看游戏按键 [G]', 24, posy = 0.70))
 		spg.add(MenuText('切换游戏运行详细信息 [Tab]', 24, posy = 0.78))

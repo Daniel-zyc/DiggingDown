@@ -7,6 +7,8 @@ from PIL import Image
 pg.init()
 logging.basicConfig(format = "%(levelname)s: %(message)s", level = logging.DEBUG)
 
+INF = 10000000000
+
 # 控制按键映射（添加控制修改三个地方，控制映射值，控制列表，按键到控制的映射）
 # 空控制（用于表示没有触发任何控制的情况）
 CTRL_NONE = 0  # 不可变
@@ -18,7 +20,7 @@ CTRL_R, CTRL_D, CTRL_L, CTRL_U = 1, 2, 3, 4
 CTRL_I, CTRL_J, CTRL_K = 10, 11, 12
 # 用于使用键盘控制选项，使用 CTRL_OP[1~10] 表示选项 1~10
 CTRL_OPT = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
-CTRL_INTER = [40, 41, 42]
+CTRL_INTER = [40, 41, 42, 43]
 
 # 此列表记录所有已知控制
 CTRL_LIST = [
@@ -54,7 +56,8 @@ KEY_TO_CTRL = {
 	pg.K_9: CTRL_OPT[9], pg.K_KP9: CTRL_OPT[9], pg.K_KP_9: CTRL_OPT[9],
 	pg.K_0: CTRL_OPT[10], pg.K_KP0: CTRL_OPT[10], pg.K_KP_0: CTRL_OPT[10],
 	pg.K_e: CTRL_INTER[1],
-	pg.K_f: CTRL_INTER[2]
+	pg.K_f: CTRL_INTER[2],
+	pg.K_c: CTRL_INTER[3]
 }
 
 # 方向映射
@@ -94,7 +97,7 @@ PRE_LOAD = 1
 
 # 地图相关常量
 # 地图默认行、列数，必须为奇数
-MAP_N, MAP_M = 101, 101
+MAP_N, MAP_M = 301, 101
 
 # 空物块
 EMPTY = 0
