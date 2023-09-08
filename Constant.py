@@ -97,7 +97,7 @@ PRE_LOAD = 1
 
 # 地图相关常量
 # 地图默认行、列数，必须为奇数
-MAP_N, MAP_M = 1001, 1001
+MAP_N, MAP_M = 101, 101
 
 # 空物块
 EMPTY = 0
@@ -352,6 +352,8 @@ LOG_INFO_EMPTY = '空存档'
 LOG_INFO_FORM = '{}'
 if not os.path.exists(LOG_ROOT_URL):
 	os.mkdir(LOG_ROOT_URL)
+
+WIN_IMG_URL = './assets/img/win.png'
 
 PIXEL_FONT_URL = './assets/font/pixel-font.ttf'
 LIGHT_GREEN = (127, 255, 127)

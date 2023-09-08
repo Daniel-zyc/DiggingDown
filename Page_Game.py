@@ -8,6 +8,7 @@ from Sprite import Sprite
 from SpriteEasy import SpriteEasy
 from SpriteMulti import SpriteMulti
 from datetime import datetime
+from PageEasy import PageEasy
 from Page_Pause import Page_Pause
 from Page_DShop import Page_DShop
 from Page_Key import Page_Key
@@ -18,6 +19,7 @@ from queue import Queue
 import Global as glb
 import random
 import threading
+import Menu
 
 
 class Sprite_Cloud(SpriteEasy):
@@ -979,6 +981,7 @@ class Page_Game(Page):
 		glb.show_WN(f'恭喜你解救了 {get_name(idx)}', color = DARK_GREEN)
 		if self.mp.saved_npc == NPC_TOT:
 			self.is_finish = 1
+			glb.pages.append(PageEasy(Menu.Background_Sp(WIN_IMG_URL, False)))
 
 	def update_fps(self):
 		self.frame_cnt += 1

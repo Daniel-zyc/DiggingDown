@@ -6,9 +6,12 @@ from Sprite import Sprite
 
 
 class PageEasy(Page):
-	def __init__(self, sp: Sprite, *args):
+	def __init__(self, sp: Sprite, range = None,*args):
 		super().__init__()
-		self.update_range = pg.Rect(sp.rect.x, sp.rect.y, sp.rect.width, sp.rect.height)
+		if range is None:
+			self.update_range = pg.Rect(sp.rect.x, sp.rect.y, sp.rect.width, sp.rect.height)
+		else:
+			self.update_range = range
 		spg = SpriteGroup()
 		spg.add(sp)
 		for arg in args:
@@ -16,7 +19,7 @@ class PageEasy(Page):
 		self.list.append(spg)
 
 	def refresh(self, ctrl: Control):
-		key = ctrl.get_key(CTRL_ESC)
+		key = ctrl.get_key(CTRL_ESC, CTRL_ENTER)
 		if key != CTRL_NONE:
 			return PAGE_EXIT
 		return PAGE_NONE

@@ -30,6 +30,7 @@ class Background_Sp(Sprite):
     def empty(self):
         pass
 
+
 class Background:
     def __init__(self):
         self.spg = SpriteGroup()
