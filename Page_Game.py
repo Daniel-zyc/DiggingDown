@@ -84,9 +84,10 @@ class Background_Sp:
 		self.cloud_num = self.cloud_num_max = CLD_NUM_MAX * self.mp.m // BG_DENS_LEN
 		self.tree_num = self.tree_num_max = TREE_NUM_MAX * self.mp.m // BG_DENS_LEN
 		self.bird_num = self.bird_num_max = BIRD_NUM_MAX * self.mp.m // BG_DENS_LEN
-		self.sky, self.cld, self.tree, self.bird, self.shop = SpriteGroup(), SpriteGroup(), SpriteGroup(), SpriteGroup(), SpriteGroup()
+		self.sky, self.cld, self.tree, self.bird, self.shop = [], SpriteGroup(), SpriteGroup(), SpriteGroup(), SpriteGroup()
 		self.wind_dir = BG_DIR[random.randint(0, 1)]
-		self.mv_pixel = self.mv_unit = 0
+		self.mv_pixel = self.mv_unit = self.sky_w = 0
+		self.bg_rect = pg.Rect(0, 0, 0, 0)
 		self.__init_sky()
 		self.__init_cld()
 		self.__init_bird()
@@ -99,13 +100,12 @@ class Background_Sp:
 		x -= SCR_W
 		endx, endy = scr_b_to_p(1, self.mp.m * 2 // 3 + 1, self.mp.r, self.mp.c)
 		endx += SCR_W
-		sp = SpriteEasy(SKY_IMG_URL.format(idx), x, y)
-		self.sky.add(sp)
-		x += sp.rect.w
-		while x < endx:
-			sp = SpriteEasy(SKY_IMG_URL.format(idx), x, y)
-			self.sky.add(sp)
-			x += sp.rect.w
+		self.bg_rect = pg.Rect(x, y, endx - x + SCR_W, SCR_H)
+		sp = SpriteEasy(SKY_IMG_URL.format(idx), 0, y)
+		self.sky_w = sp.rect.w
+		self.sky.append(SpriteEasy(SKY_IMG_URL.format(idx), -self.sky_w, y))
+		self.sky.append(sp)
+		self.sky.append(SpriteEasy(SKY_IMG_URL.format(idx), self.sky_w, y))
 
 	def __init_cld(self):
 		self.cloud_num = 0
@@ -152,12 +152,12 @@ class Background_Sp:
 		self.cld.update()
 		self.shop.update()
 		for sp in self.cld.sprites():
-			if not pg.sprite.spritecollide(sp, self.sky, False):
+			if not sp.rect.colliderect(self.bg_rect):
 				sp.kill()
 				self.cloud_num -= 1
 		self.bird.update()
 		for sp in self.bird.sprites():
-			if not pg.sprite.spritecollide(sp, self.sky, False):
+			if not sp.rect.colliderect(self.bg_rect):
 				sp.kill()
 				self.bird_num -= 1
 		if self.mp.r > SCR_CEN_R:
@@ -170,12 +170,15 @@ class Background_Sp:
 			self.bird_num += 1
 
 	def move(self, d, spd):
+		self.tree.move(d, spd)
+		self.shop.move(d, spd)
 		if d == D_MP[D_U] or d == D_MP[D_D]:
-			self.tree.move(d, spd)
-			self.shop.move(d, spd)
 			self.cld.move(d, spd)
-			self.sky.move(d, spd)
+			for sky in self.sky:
+				sky.move(d, spd)
 			self.bird.move(d, spd)
+			self.bg_rect.x += D_XY[d][0] * spd
+			self.bg_rect.y += D_XY[d][1] * spd
 			return
 		if d == D_MP[D_L]:
 			self.mv_pixel -= spd
@@ -183,17 +186,24 @@ class Background_Sp:
 			self.mv_pixel += spd
 		tmp = abs(self.mv_pixel // 3 - self.mv_unit)
 		self.mv_unit = self.mv_pixel // 3
-		self.tree.move(d, spd)
-		self.shop.move(d, spd)
 		self.cld.move(d, tmp)
-		self.sky.move(d, tmp)
+		for sky in self.sky:
+			sky.move(d, tmp)
 		self.bird.move(d, tmp)
+		self.bg_rect.x += D_XY[d][0] * tmp
+		self.bg_rect.y += D_XY[d][1] * tmp
 
 	def draw(self, scr):
+		if self.sky[0].rect.x > 0:
+			for sky in self.sky:
+				sky.rect.x -= self.sky_w
+		if self.sky[2].rect.x + self.sky_w < SCR_W:
+			for sky in self.sky:
+				sky.rect.x += self.sky_w
 		if self.mp.r > SCR_CEN_R:
 			return
 		scr_rect = scr.get_rect()
-		for sp in self.sky.sprites():
+		for sp in self.sky:
 			if sp.rect.colliderect(scr_rect):
 				sp.draw(scr)
 		for sp in self.cld.sprites():
@@ -210,7 +220,7 @@ class Background_Sp:
 				sp.draw(scr)
 
 	def empty(self):
-		self.sky.empty()
+		self.sky.clear()
 		self.cld.empty()
 		self.tree.empty()
 		self.bird.empty()
@@ -844,7 +854,7 @@ class Page_Game(Page):
 		for ore in self.dr.carry:
 			money += get_val(ore) * self.dr.carry[ore]
 			self.dr.carry[ore] = 0
-		glb.show_WN(f'售出所有矿物，获得金钱 {money}', color = LIGHT_GREEN)
+		glb.show_WN(f'售出所有矿物，获得金钱 {money}', color = DARK_GREEN)
 		self.dr.money += money
 		self.dr.o = 0
 		glb.achieve.vals['tot-money'] += money

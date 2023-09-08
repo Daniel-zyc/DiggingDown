@@ -97,7 +97,7 @@ PRE_LOAD = 1
 
 # 地图相关常量
 # 地图默认行、列数，必须为奇数
-MAP_N, MAP_M = 301, 101
+MAP_N, MAP_M = 1001, 1001
 
 # 空物块
 EMPTY = 0
@@ -212,7 +212,7 @@ for i in range(0, CHEST_TOT):
 	BLK_DATA[chest]['val'] *= CHEST_VAL_K[i]
 
 # NPC 移动概率
-NPC_MOVE = [1, 100]
+NPC_MOVE = [3, 100]
 
 # 物块图片地址链接
 DIRT_IMG_URL = './assets/img/dirt/{}.png'
@@ -234,7 +234,7 @@ CLD_SPD = [1, 5]
 BIRD_SPD = [1, 5]
 # 云层、鸟的生成概率 [分子, 分母]
 CLD_GEN_SPD = [1, 300]
-BIRD_GEN_SPD = [1, 1000]
+BIRD_GEN_SPD = [1, 100]
 # 云层、鸟、树最大密度
 BG_DENS_LEN = 1000
 CLD_NUM_MAX, BIRD_NUM_MAX, TREE_NUM_MAX = 100, 100, 100
@@ -358,7 +358,7 @@ LIGHT_GREEN = (127, 255, 127)
 LIGHT_RED = (255, 127, 127)
 DARK_RED = (255, 63, 63)
 DARK_GREEN = (63, 176, 63)
-P_COLOR = (255, 221, 113)
+P_COLOR = (214, 163, 0)
 G_COLOR = (117, 196, 255)
 O_COLOR = (200, 130, 4)
 H_COLOR = DARK_RED
@@ -536,7 +536,7 @@ def fog_dist(r, c, rr, cc):
 
 
 def get_speed_level(blk_tp, dr_rgd_l, dr_eng_l, speedup):
-	return SPEED_LEVEL[speedup][SPEED_LEVEL_MAX]
+	return SPEED_LEVEL[speedup][9]
 	dr_rgd = DRILL_DATA['rgd'][dr_rgd_l]
 	dr_eng = DRILL_DATA['eng'][dr_eng_l]
 	tmp = 4
