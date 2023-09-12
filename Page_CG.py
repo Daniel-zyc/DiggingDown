@@ -1,5 +1,5 @@
 from Constant import *
-from Menu import Background_Sp, MenuText
+from Menu import MenuBackground, MenuText
 from Control import Control
 from Sprite import Sprite
 from SpriteGroup import SpriteGroup
@@ -12,7 +12,7 @@ class Page_CG(Page):
 		self.update_range = pg.Rect(0, 0, SCR_W, SCR_H)
 		spg = SpriteGroup()
 		self.idx = 0
-		self.list.append(Background_Sp(CG_IMG_URL.format(self.idx), False))
+		self.list.append(MenuBackground(CG_IMG_URL.format(self.idx), False))
 		self.nxt = MenuText('继续 [Enter]', 36, posx = 0.85, posy = 0.9)
 		mask = Sprite()
 		mask.image = pg.surface.Surface((self.nxt.rect.w + 20, self.nxt.rect.h + 20))
@@ -32,6 +32,6 @@ class Page_CG(Page):
 		return PAGE_NONE
 
 	def update(self):
-		self.list[0] = Background_Sp(CG_IMG_URL.format(self.idx), False)
+		self.list[0] = MenuBackground(CG_IMG_URL.format(self.idx), False)
 
 

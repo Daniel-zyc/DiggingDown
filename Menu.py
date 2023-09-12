@@ -4,7 +4,7 @@ from SpriteGroup import SpriteGroup
 import random
 
 
-class Background_Sp(Sprite):
+class MenuBackground(Sprite):
     def __init__(self, img_url = None, fill = True):
         super().__init__()
         if img_url is None:
@@ -34,7 +34,7 @@ class Background_Sp(Sprite):
 class Background:
     def __init__(self):
         self.spg = SpriteGroup()
-        self.spg.add(Background_Sp())
+        self.spg.add(MenuBackground())
         mask = Sprite()
         mask.image = pg.surface.Surface((SCR_W, SCR_H))
         mask.image.set_alpha(144)
@@ -69,7 +69,7 @@ class MenuText(Sprite):
         self.kill()
 
 
-class Block(Sprite):
+class MenuBlock(Sprite):
     def __init__(self, w: int = SCR_W, h: int = SCR_H // 5, color = DARK_RED):
         super().__init__()
         self.w = w

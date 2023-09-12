@@ -981,7 +981,7 @@ class Page_Game(Page):
 		glb.show_WN(f'恭喜你解救了 {get_name(idx)}', color = DARK_GREEN)
 		if self.mp.saved_npc == NPC_TOT:
 			self.is_finish = 1
-			glb.pages.append(PageEasy(Menu.Background_Sp(WIN_IMG_URL, False)))
+			glb.pages.append(PageEasy(Menu.MenuBackground(WIN_IMG_URL, False)))
 
 	def update_fps(self):
 		self.frame_cnt += 1
